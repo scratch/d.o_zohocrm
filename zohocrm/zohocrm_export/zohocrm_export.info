@@ -1,0 +1,13 @@
+name = "Zoho CRM Export"
+description = "Export Drupal data into Zoho CRM compatible CSV files"
+dependencies[] = zohocrm
+core = 6.x
+php = 5.3
+package = Zoho CRM
+
+; Information added by Drupal.org packaging script on 2014-01-20
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "zohocrm"
+datestamp = "1390220307"
+

@@ -1,0 +1,142 @@
+<?php
+
+/**
+ * @file
+ */
+
+ /**
+ * Implements hook_menu().
+ */
+function zohocrm_import_menu() {
+  $items = array();
+
+  $items['admin/settings/zohocrm/import'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Import Zoho CRM data',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('zohocrm_import_form'),
+    'access arguments' => array('import zohocrm data'),
+    'file' => 'zohocrm_import.admin.inc',
+    'weight' => 10,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_perm().
+ */
+function zohocrm_import_perm() {
+  return array('import zohocrm data');
+}
+
+/**
+ * @param $file
+ *   Drupal's file object
+ * @param $data
+ *   array containing information about the file
+ * @param $settings
+ *   settings used for saving zoho data to drupal
+ */
+function zohocrm_import_batch_operation($file, $data, $settings, &$context) {
+  if (!isset($context['sandbox']['progress'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['max'] = $data['count'];
+    $context['sandbox']['offset'] = $data['offset'];
+    $context['results']['file'] = $file;
+  }
+
+  // Number of records to import in single request.
+  $limit = variable_get('zohocrm_import_limit', 50);
+
+  $f = fopen($file->filepath, "r");
+  // Continue import where we left off last time.
+  fseek($f, $context['sandbox']['offset']);
+
+  $i = 0;
+  while ($i < $limit && ($row = fgetcsv($f)) !== FALSE) {
+    $record = zohocrm_import_prepare_record($row, $data['header'], $settings['mapping']);
+    zohocrm_save_zoho_data($record, $settings);
+
+    $context['results']['count'] = ++$context['sandbox']['progress'];
+    $args = array('@current' => $context['sandbox']['progress'], '@total' => $context['sandbox']['max']);
+    $context['message'] = t('Importing record @current out of @total', $args);
+    $i++;
+  }
+
+  $context['sandbox']['offset'] = ftell($f);
+  fclose($f);
+
+  if ($context['sandbox']['progress'] >= $context['sandbox']['max']) {
+    $context['finished'] = 1;
+  }
+  else {
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+  }
+}
+
+function zohocrm_import_batch_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message(t('@count records imported.', array('@count' => $results['count'])));
+  }
+  else {
+    drupal_set_message("Import failed.", 'error');
+  }
+
+  // Delete the CSV file.
+  db_query('DELETE FROM {files} WHERE fid = %d', $results['file']->fid);
+  file_delete($results['file']->filepath);
+}
+
+/**
+ * @param $row
+ *   single row from CSV file
+ * @param $header
+ *   CSV file header
+ * @param $mapping
+ *   name of the mapping used for import
+ *
+ * @return
+ *   Zoho CRM data array ready for saving into Drupal
+ */
+function zohocrm_import_prepare_record($row, $header, $mapping) {
+  $mapping = zohocrm_mapping_load($mapping);
+  $owner = substr($mapping['zoho_module'], 0, -1) .' Owner';
+  $users = zohocrm_get_users();
+
+  $record = array();
+  foreach ($row as $key => $value) {
+    // remove 'zcrm_' prefix from all record IDs.
+    if (substr($header[$key], -2) === 'Id' && substr($value, 0, 5) === 'zcrm_') {
+      $value = str_replace('zcrm_', '', $value);
+    }
+
+    $record[$header[$key]] = $value;
+  }
+
+  // Generate "<Module> Owner" field from "<Module> Owner Id"
+  // This is required because in some cases CSV files exported from Zoho CRM
+  // contain only "<Module> Owner Id" field.
+  $owner_id = $owner .' Id';
+  if (isset($record[$owner_id]) && !isset($record[$owner])) {
+    $record[$owner] = $users['by_id'][$record[$owner_id]]['email'];
+  }
+
+  // Remove 'zcrm_' prefix from other fields that may contain record ID.
+  $fields = array('Contact Name', 'Related To', 'Created By', 'Modified By');
+  foreach ($fields as $field) {
+    if (isset($record[$field]) && substr($record[$field], 0, 5) === 'zcrm_') {
+      $record[$field] = str_replace('zcrm_', '', $record[$field]);
+    }
+  }
+
+  // Convert Zoho CRM user IDs to emails.
+  if (isset($record['Created By']) && isset($users['by_id'][$record['Created By']])) {
+    $record['Created By'] = $users['by_id'][$record['Created By']]['email'];
+  }
+  if (isset($record['Modified By']) && isset($users['by_id'][$record['Modified By']])) {
+    $record['Modified By'] = $users['by_id'][$record['Modified By']]['email'];
+  }
+
+  return $record;
+}

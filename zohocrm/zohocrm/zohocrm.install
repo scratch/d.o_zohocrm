@@ -1,0 +1,183 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for zohocrm module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function zohocrm_install() {
+  drupal_install_schema('zohocrm');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function zohocrm_schema() {
+  $schema = array();
+
+  $schema['zohocrm_mapping'] = array(
+    'description' => 'Stores basic info about mappings that are defined between Drupal entities/objects and Zoho CRM modules.',
+    'fields' => array(
+      'mid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Unique ID, defined by the database.',
+        'no export' => TRUE,
+      ),
+      'mapping_name' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'The unique name of the mapping. It may contain only alphanumeric characters plus underscores.',
+      ),
+      'description' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'description' => 'A description of the mapping.',
+      ),
+      'drupal_endpoint' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'Name of the Drupal object/entity that is being used as a mapping endpoint on Drupal side.',
+      ),
+      'zoho_module' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'Name of the Zoho CRM module that is being used as endpoint on Zoho CRM side.',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'A boolean to indicate whether or not this mapping is enabled.',
+      ),
+    ),
+    'primary key' => array('mid'),
+    'unique keys' => array('name' => array('mapping_name')),
+  );
+
+  $schema['zohocrm_mapping_fields'] = array(
+    'description' => 'Stores details of fields defined for each of the mappings.',
+    'fields' => array(
+      'mfid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Unique ID, defined by the database.',
+        'no export' => TRUE,
+      ),
+      'mapping_name' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'Name of the mapping.',
+      ),
+      'src' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'Name of the source field.',
+      ),
+      'dst' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'Name of the destination field.',
+      ),
+      'default_value' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'Value used if source field is empty.',
+      ),
+      'sync_direction' => array(
+        'type' => 'int',
+        'default' => 0,
+        'not null' => TRUE,
+        'size' => 'tiny',
+        'description' => 'Integer (bitmap) indicating direction in which field data is allowed to be sent (drupal to zoho - 1, zoho to drupal - 2).',
+      ),
+    ),
+    'primary key' => array('mfid'),
+    'unique keys' => array('name_dst_dir' => array('mapping_name', 'dst', 'sync_direction')),
+  );
+
+  $schema['zohocrm_record_mapping'] = array(
+    'description' => 'Stores details of mappings between Drupal and Zoho CRM records.',
+    'fields' => array(
+      'rid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Unique ID, defined by the database.',
+        'no export' => TRUE,
+      ),
+      'drupal_endpoint' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'Name of the Drupal endpoint.',
+      ),
+      'drupal_id' => array(
+        'description' => 'Record ID of the Drupal endpoint.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'zoho_module' => array(
+        'type' => 'varchar',
+        'length' => '64',
+        'default' => '',
+        'not null' => TRUE,
+        'description' => 'Name of the Zoho CRM module.',
+      ),
+      'zoho_id' => array(
+        'description' => 'Record ID of the Zoho CRM endpoint.',
+        'type' => 'varchar',
+        'length' => '32',
+        'default' => '',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('rid'),
+    'indexes' => array(
+      'drupal_endpoint' => array('drupal_endpoint'),
+      'drupal_id' => array('drupal_id'),
+      'zoho_module' => array('zoho_module'),
+      'zoho_id' => array('zoho_id'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function zohocrm_uninstall() {
+  drupal_uninstall_schema('zohocrm');
+
+  variable_del('zohocrm_authtoken');
+  variable_del('zohocrm_client_disabled');
+  variable_del('zohocrm_timezone');
+  variable_del('zohocrm_filter_format');
+  variable_del('zohocrm_webhooks_authtoken');
+  variable_del('zohocrm_debug_mode');
+  variable_del('zohocrm_users_last_update');
+}

@@ -1,0 +1,142 @@
+<?php
+
+/**
+ * @file
+ * Provides mapping between Drupal core user fields and Zoho CRM
+ */
+
+define('ZOHOCRM_ENDPOINT_USER', 'user');
+
+define('ZOHOCRM_USER_ACCOUNT', t('User Account'));
+
+/**
+ * Implements hook_zohocrm_endpoint_info().
+ */
+function zohocrm_user_zohocrm_endpoint_info() {
+  return array(
+    ZOHOCRM_ENDPOINT_USER => array(
+      'type' => ZOHOCRM_ENDPOINT_USER,
+      'label' => t('User Account'),
+      'description' => t('Description'),
+      'module' => 'zohocrm_user',
+      'key' => 'uid',
+      'table' => 'users',
+      'create_callback' => 'zohocrm_user_create',
+      'load_callback' => 'user_load',
+      'save_callback' => 'zohocrm_user_save',
+      'delete_callback' => 'zohocrm_user_delete',
+      'find_callback' => 'zohocrm_user_find',
+    ),
+  );
+}
+
+/**
+ * Implements hook_zohocrm_endpoint_fields_info().
+ */
+function zohocrm_user_zohocrm_endpoint_fields_info($endpoint) {
+  if ($endpoint == ZOHOCRM_ENDPOINT_USER) {
+    $fields = array(
+      'uid' => array(
+        'key' => 'uid',
+        'label' => t('User Id'),
+        'group' => ZOHOCRM_USER_ACCOUNT,
+        'handler' => 'zohocrm_field_handler_default',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+      ),
+      'name' => array(
+        'key' => 'name',
+        'label' => t('Username'),
+        'group' => ZOHOCRM_USER_ACCOUNT,
+        'handler' => 'zohocrm_field_handler_default',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      ),
+      'mail' => array(
+        'key' => 'mail',
+        'label' => t('E-mail'),
+        'group' => ZOHOCRM_USER_ACCOUNT,
+        'handler' => 'zohocrm_field_handler_default',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      ),
+      'user_url' => array(
+        'key' => 'user_url',
+        'label' => t('Link to user page'),
+        'group' => ZOHOCRM_USER_ACCOUNT,
+        'handler' => 'zohocrm_user_field_handler_url',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+      ),
+      'created' => array(
+        'key' => 'created',
+        'label' => t('Date Created'),
+        'group' => ZOHOCRM_USER_ACCOUNT,
+        'handler' => 'zohocrm_field_handler_timestamp',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+      ),
+      'access' => array(
+        'key' => 'access',
+        'label' => t('Last Access Time'),
+        'group' => ZOHOCRM_USER_ACCOUNT,
+        'handler' => 'zohocrm_field_handler_timestamp',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+      ),
+      'login' => array(
+        'key' => 'login',
+        'label' => t('Last Login Time'),
+        'group' => ZOHOCRM_USER_ACCOUNT,
+        'handler' => 'zohocrm_field_handler_timestamp',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+      ),
+    );
+  }
+
+  return $fields;
+}
+
+function zohocrm_user_field_handler_url($src, $dst, $data, $sync_direction, &$dst_object = NULL) {
+  return url('user/'. $data->uid, array('absolute' => TRUE));
+}
+
+function zohocrm_user_create() {
+  $user = new stdClass();
+
+  return $user;
+}
+
+function zohocrm_user_save(&$account, $record) {
+  if (empty($account->uid)) {
+    $record['pass'] = user_password();
+    $record['status'] = 1;
+  }
+  $account = user_save($account, $record);
+
+  return $account->uid;
+}
+
+function zohocrm_user_delete($uid) {
+  user_delete(array(), $uid);
+}
+
+function zohocrm_user_find($zoho_data, $mapping) {
+  $uid = NULL;
+  $field = $mapping['fields']['mail']['src'];
+
+  if (!empty($field) && isset($zoho_data[$field])) {
+    $uid = db_result(db_query("SELECT uid FROM {users} WHERE mail = '%s'", $zoho_data[$field]));
+  }
+
+  return $uid;
+}
+
+/**
+ * Implements hook_user().
+ */
+function zohocrm_user_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'delete':
+      // Check if user deletion will be synced to Zoho. If not,
+      // clean up record mapping here.
+      if (zohocrm_is_receiving_zoho_data() || !zohocrm_dtz_delete_sync_status($account, 'user')) {
+        zohocrm_record_mapping_delete(array('drupal_id' => $account->uid));
+      }
+      break;
+  }
+}

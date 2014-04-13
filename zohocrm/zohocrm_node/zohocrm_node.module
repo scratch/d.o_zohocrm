@@ -1,0 +1,707 @@
+<?php
+
+/**
+ * @file
+ * Provides mapping between Drupal node fields and Zoho CRM
+ */
+
+define('ZOHOCRM_ENDPOINT_NODE', 'node');
+
+define('ZOHOCRM_NODE_GENERAL', t('Node: General'));
+define('ZOHOCRM_CCK_FIELDS', t('CCK Fields'));
+
+/**
+ * Implements hook_zohocrm_endpoint_info().
+ */
+function zohocrm_node_zohocrm_endpoint_info() {
+  $info = array();
+  $types = node_get_types();
+
+  foreach ($types as $type) {
+    $name = ZOHOCRM_ENDPOINT_NODE .'__'. $type->type;
+    $info[$name] = array(
+      'type' => $name,
+      'label' => t('Content Type:') .' '. $type->name,
+      'description' => $type->description,
+      'module' => 'zohocrm_node',
+      'key' => 'nid',
+      'table' => 'node',
+      'where' => array(
+        'type' => $type->type,
+      ),
+      'create_callback' => 'zohocrm_node_create',
+      'load_callback' => 'node_load',
+      'save_callback' => 'zohocrm_node_save',
+      'delete_callback' => 'node_delete',
+    );
+  }
+
+  return $info;
+}
+
+/**
+ * Implements hook_zohocrm_endpoint_fields_info().
+ */
+function zohocrm_node_zohocrm_endpoint_fields_info($endpoint) {
+
+  if (strpos($endpoint, ZOHOCRM_ENDPOINT_NODE .'__') === 0) {
+    $type = str_replace(ZOHOCRM_ENDPOINT_NODE .'__', '', $endpoint);
+
+    $fields = array(
+      'nid' => array(
+        'key' => 'nid',
+        'label' => t('Node Id'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_field_handler_default',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+      ),
+      'title' => array(
+        'key' => 'title',
+        'label' => t('Title'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_field_handler_default',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      ),
+      'body' => array(
+        'key' => 'body',
+        'label' => t('Body'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_node_field_handler_body',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      ),
+      'teaser' => array(
+        'key' => 'teaser',
+        'label' => t('Teaser'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_node_field_handler_body',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      ),
+      'created' => array(
+        'key' => 'created',
+        'label' => t('Date Created'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_field_handler_timestamp',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+      ),
+      'changed' => array(
+        'key' => 'changed',
+        'label' => t('Date Modified'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_field_handler_timestamp',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      ),
+      'uid' => array(
+        'key' => 'uid',
+        'label' => t('Node Author as User ID'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_field_handler_default',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      ),
+      'author_email' => array(
+        'key' => 'author_email',
+        'label' => t('Node Author as Author Email'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_node_field_handler_author_email',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      ),
+      'author_username' => array(
+        'key' => 'author_username',
+        'label' => t('Node Author as Username'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_node_field_handler_author_username',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      ),
+      'node_url' => array(
+        'key' => 'node_url',
+        'label' => t('Node URL'),
+        'group' => ZOHOCRM_NODE_GENERAL,
+        'handler' => 'zohocrm_node_field_handler_url',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+      ),
+    );
+
+    if (function_exists('content_types')) {
+      $content_type = content_types($type);
+      if (!empty($content_type['fields'])) {
+        $fields += zohocrm_node_cck_endpoint_fields_info($type, $content_type['fields']);
+      }
+    }
+  }
+
+  return $fields;
+}
+
+function zohocrm_node_cck_endpoint_fields_info($type, $fields_info) {
+  $fields = array();
+  $opt_group = ZOHOCRM_CCK_FIELDS;
+
+  foreach ($fields_info as $key => $info) {
+    $fields[$type .'__'. $key] = array(
+      'key' => $type .'__'. $key,
+      'label' => $info['widget']['label'] .' ('. $key .')',
+      'group' => $opt_group,
+      'handler' => 'zohocrm_node_field_handler_cck',
+      'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+    );
+
+    switch ($info['type']) {
+      case 'userreference';
+        $fields[$type .'__'. $key .'__name'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as Username',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_userreference_name',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        $fields[$type .'__'. $key .'__mail'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as E-mail',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_userreference_mail',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        break;
+
+      case 'nodereference';
+        $fields[$type .'__'. $key .'__title'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as Node Title',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_nodereference_title',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        break;
+
+      case 'location';
+        $fields[$type .'__'. $key .'__name'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as Location Name',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_location',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        $fields[$type .'__'. $key .'__street'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as Street',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_location',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        $fields[$type .'__'. $key .'__city'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as City',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_location',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        $fields[$type .'__'. $key .'__province'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as Province',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_location_province',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        $fields[$type .'__'. $key .'__postal_code'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as Postal Code',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_location',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        $fields[$type .'__'. $key .'__country'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as Country',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_location_country',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        break;
+
+      case 'content_taxonomy';
+        $fields[$type .'__'. $key .'__term'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as Term Name',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_content_taxonomy_term',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+        break;
+    }
+
+    // Date field requires special handling in order to support
+    // To/From values and conversion to date format compatible
+    // with Zoho CRM
+    if ($info['module'] == 'date') {
+      // First unset generic Date field definition
+      unset($fields[$type .'__'. $key]);
+
+      // Now redefine the field
+      $fields[$type .'__'. $key .'__value'] = array(
+        'key' => $type .'__'. $key,
+        'label' => $info['widget']['label'] .' ('. $key .') as From Date',
+        'group' => $opt_group,
+        'handler' => 'zohocrm_node_field_handler_cck_date',
+        'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+      );
+
+      // If "To Date" field is allowed add its definition as well
+      if (!empty($info['todate'])) {
+        $fields[$type .'__'. $key .'__value2'] = array(
+          'key' => $type .'__'. $key,
+          'label' => $info['widget']['label'] .' ('. $key .') as To Date',
+          'group' => $opt_group,
+          'handler' => 'zohocrm_node_field_handler_cck_date',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        );
+      }
+    }
+  }
+
+  return $fields;
+}
+
+function zohocrm_node_field_handler_body($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  $result = '';
+
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $result = check_markup($data->body, $data->format, FALSE);
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      $result = $data->{$source_field};
+      $destination_object->{$destination_field} = $data->{$source_field};
+      $destination_object->format = variable_get('zohocrm_filter_format', FILTER_FORMAT_DEFAULT);
+      break;
+  }
+
+  return $result;
+}
+
+function zohocrm_node_field_handler_author_email($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $value = '';
+      if (!empty($data->uid)) {
+        $value = db_result(db_query("SELECT mail FROM {users} WHERE uid = %d", $data->uid));
+      }
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      $value = '';
+      if (!empty($data->{$source_field})) {
+        $value = db_result(db_query("SELECT uid FROM {users} WHERE mail = '%s'", $data->{$source_field}));
+      }
+
+      $destination_object->uid = $value;
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_author_username($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $value = '';
+      if (!empty($data->uid)) {
+        $value = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $data->uid));
+      }
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      $value = '';
+      if (!empty($data->{$source_field})) {
+        $value = db_result(db_query("SELECT uid FROM {users} WHERE name = '%s'", $data->{$source_field}));
+      }
+
+      $destination_object->uid = $value;
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_url($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $value = '';
+      if (!empty($data->nid)) {
+        $value = url('node/'. $data->nid, array('absolute' => TRUE));
+      }
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      // Not supported.
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_cck($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      list($type, $field_name) = explode('__', $source_field);
+      $content_type = content_types($type);
+      $field = $content_type['fields'][$field_name];
+
+      if (count($field['columns']) === 1) {
+        $key = key($field['columns']);
+        $value = $data->{$field_name}[0][$key];
+
+        if ($field['widget']['type'] == 'optionwidgets_select' || $field['widget']['type'] == 'optionwidgets_button') {
+          $allowed_values = content_allowed_values($field);
+          if (isset($allowed_values[$value])) {
+            $value = $allowed_values[$value];
+          }
+        }
+      }
+      else {
+        switch ($field['type']) {
+          case 'link':
+            $value = $data->{$field_name}[0]['url'];
+            break;
+
+          case 'text':
+            // Columns: value/format
+            if ($field['text_processing'] == 1) {
+              $value = check_markup($data->{$field_name}[0]['value'], $data->{$field_name}[0]['format'], FALSE);
+              // @todo: Check if Zoho CRM supports HTML code in text fields. If not, strip all HTML tags.
+            }
+            else {
+              $value = $data->{$field_name}[0]['value'];
+            }
+            break;
+
+          case 'phone_number':
+            // Columns: number/country_codes/extension
+            $element = array(
+              '#item' => $data->{$field_name}[0],
+            );
+            $theme = 'cck_phone_formatter_'. $field['display_settings']['full']['format'];
+            $value = theme($theme, $element);
+            $value = strip_tags($value);
+            break;
+
+          case 'filefield':
+            // Columns: fid/list/data
+            watchdog('zohocrm', t('File attachments/uploads currently not supported. Field: @field'), array('@field' => $field['field_name']), WATCHDOG_ERROR);
+            break;
+
+          default:
+            watchdog('zohocrm', t('Unsupported CCK field type @type for field @field'), array('@type' => $field['type'], '@field' => $field['field_name']), WATCHDOG_ERROR);
+            $value = '';
+        }
+      }
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      $value = $data->{$source_field};
+
+      list($type, $field_name) = explode('__', $destination_field);
+      $content_type = content_types($type);
+      $field = $content_type['fields'][$field_name];
+
+      if (count($field['columns']) === 1) {
+        if ($field['widget']['type'] == 'optionwidgets_select' || $field['widget']['type'] == 'optionwidgets_button') {
+          $allowed_values = content_allowed_values($field);
+          $array_key = array_search($value, $allowed_values);
+          if ($array_key !== FALSE) {
+            $value = $array_key;
+          }
+        }
+
+        $key = key($field['columns']);
+        $destination_object->{$field_name}[0][$key] = $value;
+      }
+      else {
+        switch ($field['type']) {
+          case 'link':
+            $destination_object->{$field_name}[0]['url'] = $value;
+            break;
+
+          case 'text':
+            $destination_object->{$field_name}[0]['value'] = $value;
+            if ($field['text_processing'] == 1) {
+              $destination_object->{$field_name}[0]['format'] = variable_get('zohocrm_filter_format', FILTER_FORMAT_DEFAULT);
+            }
+            break;
+
+          case 'phone_number':
+            // Columns: number/country_codes/extension
+            // @todo: implement support for phone_number field
+            break;
+
+          case 'filefield':
+            // Columns: fid/list/data
+            watchdog('zohocrm', t('File attachments/uploads currently not supported. Field: @field'), array('@field' => $field['field_name']), WATCHDOG_ERROR);
+            break;
+
+          default:
+            watchdog('zohocrm', t('Unsupported CCK field type @type for field @field'), array('@type' => $field['type'], '@field' => $field['field_name']), WATCHDOG_ERROR);
+        }
+      }
+
+
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_cck_date($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      list($type, $field_name, $key) = explode('__', $source_field);
+
+      $value = '';
+      if (!empty($data->{$field_name}[0][$key])) {
+        // Load configuration of the source CCK date field.
+        $content_type = content_types($type);
+        $info = $content_type['fields'][$field_name];
+
+        $date = date_make_date($data->{$field_name}[0][$key], $data->{$field_name}[0]['timezone_db'], $data->{$field_name}[0]['date_type']);
+
+        if (!empty($info['tz_handling']) && $info['tz_handling'] != 'none') {
+          $timezone = variable_get('zohocrm_timezone', '');
+          if (empty($timezone)) {
+            $timezone = date_get_timezone($info['tz_handling']);
+          }
+          $date->setTimezone(new DateTimeZone($timezone));
+        }
+
+        $value = date_format_date($date, 'custom', ZOHOCRM_DATETIME_FORMAT);
+      }
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      if (!empty($data->{$source_field})) {
+        list($type, $field_name, $key) = explode('__', $destination_field);
+
+        // Load configuration of the destination CCK date field.
+        $content_type = content_types($type);
+        $info = $content_type['fields'][$field_name];
+
+        // Zoho CRM Webhooks provide all dates in UTC timezone.
+        $timezone = new DateTimeZone('UTC');
+
+        try {
+          $date = new DateTime($data->{$source_field}, $timezone);
+
+          $timezone_db = date_get_timezone_db($info['tz_handling']);
+          if (!empty($info['tz_handling']) && $info['tz_handling'] != 'none') {
+            // Convert to timezone defined by destination CCK field.
+            $date->setTimezone(new DateTimeZone($timezone_db));
+          }
+
+          // Convert date object to date format of the destination CCK field
+          // and apply granularity setting.
+          $value = date_convert($date, DATE_OBJECT, $info['type']);
+          $value = date_limit_value($value, date_granularity($info), $info['type']);
+
+          $destination_object->{$field_name}[0][$key] = $value;
+          $destination_object->{$field_name}[0]['date_type'] = $info['type'];
+          $destination_object->{$field_name}[0]['timezone'] = date_get_timezone($info['tz_handling']);
+          $destination_object->{$field_name}[0]['timezone_db'] = $timezone_db;
+        }
+        catch (Exception $e) {
+          watchdog('zohocrm', t('Invalid date value received from Zoho CRM: @value'), array('@value' => $data->{$source_field}), WATCHDOG_WARNING);
+        }
+      }
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_cck_nodereference_title($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $nid = zohocrm_node_field_handler_cck($source_field, $destination_field, $data, $sync_direction);
+
+      $value = '';
+      if (!empty($nid)) {
+        $value = db_result(db_query("SELECT title FROM {node} WHERE nid = %d", $nid));
+      }
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      list($type, $field_name, $key) = explode('__', $destination_field);
+
+      $value = '';
+      $reference = array();
+      if (!empty($data->{$source_field})) {
+        // Load configuration of the destination CCK nodereference field.
+        $content_type = content_types($type);
+        $info = $content_type['fields'][$field_name];
+
+        $reference = _nodereference_potential_references($info, $data->{$source_field}, 'equals', NULL, 1);
+      }
+      if (!empty($reference)) {
+        $value = key($reference);
+      }
+
+      $destination_object->{$field_name}[0]['nid'] = $value;
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_cck_userreference_name($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $uid = zohocrm_node_field_handler_cck($source_field, $destination_field, $data, $sync_direction);
+      $user = user_load($uid);
+      $value = $user->name;
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      $value = '';
+      if (!empty($data->{$source_field})) {
+        $value = db_result(db_query("SELECT uid FROM {users} WHERE name = '%s'", $data->{$source_field}));
+      }
+      list($type, $field_name, $key) = explode('__', $destination_field);
+      $destination_object->{$field_name}[0]['uid'] = $value;
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_cck_userreference_mail($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $uid = zohocrm_node_field_handler_cck($source_field, $destination_field, $data, $sync_direction);
+      $user = user_load($uid);
+      $value = $user->mail;
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      $value = '';
+      if (!empty($data->{$source_field})) {
+        $value = db_result(db_query("SELECT uid FROM {users} WHERE mail = '%s'", $data->{$source_field}));
+      }
+
+      list($type, $field_name, $key) = explode('__', $destination_field);
+      $destination_object->{$field_name}[0]['uid'] = $value;
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_cck_location($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      list($type, $field_name, $key) = explode('__', $source_field);
+      $value = $data->{$field_name}[0][$key];
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      list($type, $field_name, $key) = explode('__', $destination_field);
+      $value = $data->{$source_field};
+      $destination_object->{$field_name}[0][$key] = $value;
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_cck_location_province($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      list($type, $field_name) = explode('__', $source_field);
+      $value = location_province_name($node->{$field_name}[0]['country'], $node->{$field_name}[0]['province']);
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      // @todo: implement ztd handler.
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_cck_location_country($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      list($type, $field_name) = explode('__', $source_field);
+      $value = location_country_name($node->{$field_name}[0]['country']);
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      // @todo: implement ztd handler.
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_field_handler_cck_content_taxonomy_term($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $tid = zohocrm_node_field_handler_cck($field, $node);
+      $term = taxonomy_get_term($tid);
+      $value = $term->name;
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      // @todo: implement ztd handler.
+      break;
+  }
+
+  return $value;
+}
+
+function zohocrm_node_create($endpoint) {
+  $node = new stdClass();
+  $node->title = t('Untitled');
+  $node->uid = 1;
+  $node->type = str_replace('node__', '', $endpoint['type']);
+
+  return $node;
+}
+
+function zohocrm_node_save(&$node, $record) {
+  node_save($node);
+
+  return $node->nid;
+}
+
+/**
+ * Implements hook_nodeapi().
+ */
+function zohocrm_node_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'insert':
+      if (isset($node->zohocrm_record_mapping_add)) {
+        $mapping = $node->zohocrm_record_mapping_add['mapping'];
+        $zoho_id = $node->zohocrm_record_mapping_add['zoho_id'];
+        zohocrm_record_mapping_add($node->nid, $zoho_id, $mapping);
+        unset($node->zohocrm_record_mapping_add);
+      }
+      break;
+    case 'delete':
+      // Check if node deletion will be synced to Zoho. If not,
+      // clean up record mapping here.
+      if (zohocrm_is_receiving_zoho_data() || !zohocrm_dtz_delete_sync_status($node, 'node')) {
+        zohocrm_record_mapping_delete(array('drupal_id' => $node->nid));
+      }
+      break;
+  }
+}

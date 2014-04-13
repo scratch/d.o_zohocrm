@@ -1,0 +1,80 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for zohocrm_export module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function zohocrm_export_install() {
+  $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export'));
+  if (file_check_directory($path, FILE_CREATE_DIRECTORY)) {
+    _zohocrm_export_create_htaccess();
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function zohocrm_export_uninstall() {
+  $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export'));
+  if (is_dir($path)) {
+    $no_mask = array('.', '..', 'CVS');
+    file_scan_directory($path, '^zcrm_.*\.csv$', $no_mask, 'file_delete');
+
+    db_query("DELETE FROM {files} WHERE filename LIKE 'zcrm_%%' AND filepath LIKE '%s%%'", $path .'/');
+  }
+
+  variable_del('zohocrm_export_limit');
+  variable_del('zohocrm_export_directory');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function zohocrm_export_requirements($phase) {
+  $requirements = array();
+
+  switch ($phase) {
+    case 'runtime':
+      // Check whether zohocrm_export directory is protected
+      $dir = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export'));
+      if (file_check_directory($dir, FILE_CREATE_DIRECTORY)) {
+        if (!file_exists($dir .'/.htaccess')) {
+          _zohocrm_export_create_htaccess();
+        }
+        $path = $dir .'/test.txt';
+        file_save_data('Testing', $path);
+        $url = url($path, array('absolute' => TRUE));
+        $response = drupal_http_request($url, array(), 'HEAD');
+        if ($response->code != '403') {
+          $requirements['zohocrm_export'] = array(
+            'title'       => t('Zoho CRM export directory'),
+            'description' => t('Zoho CRM export directory is not protected. Unauthorized
+                               users may be able to access your exported CSV files.'),
+            'severity'    => REQUIREMENT_WARNING,
+            'value'       => t('Not Protected'),
+          );
+        }
+        file_delete($path);
+      }
+      break;
+  }
+
+  return $requirements;
+}
+
+function _zohocrm_export_create_htaccess() {
+
+  $content = <<<CONTENT
+# Protect exported CSV files from unauthorized downloads
+SetHandler This_is_a_Drupal_security_line_do_not_remove
+Deny from all
+
+CONTENT;
+
+  $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export'));
+  file_save_data($content, $path .'/.htaccess');
+}

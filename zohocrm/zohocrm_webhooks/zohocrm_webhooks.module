@@ -1,0 +1,153 @@
+<?php
+
+/**
+ * @file
+ * Provides integration with Zoho CRM Webhooks
+ */
+
+function zohocrm_webhooks_menu() {
+  $items['admin/zohocrm/webhooks/%'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => 'Zoho CRM Webhooks',
+    'page callback' => 'zohocrm_webhooks_trigger_event',
+    'page arguments' => array(3),
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+function zohocrm_webhooks_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'zohocrm_admin_settings';
+      $form['zohocrm_webhooks_authtoken'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Zoho CRM Webhooks Authentication Token'),
+        '#description' => t('Alpha-numeric string used to authenticate <a href="@url">Zoho CRM Webhooks</a>.
+                            Add Custom Parameter "authtoken" with this value to each Zoho CRM webhook that
+                            should be allowed to access your site. It is recommended to configure different
+                            authtoken from the one used for accessing Zoho CRM API',
+                            array('@url' => url('http://www.zoho.com/crm/help/automation/webhooks.html'))),
+        '#default_value' => variable_get('zohocrm_webhooks_authtoken', ''),
+        '#required' => TRUE,
+        '#size' => 30,
+        '#weight' => 0,
+      );
+      break;
+  }
+}
+
+function zohocrm_webhooks_trigger_event($arg) {
+  if (!empty($_POST['authtoken']) && $_POST['authtoken'] == variable_get('zohocrm_webhooks_authtoken', '')) {
+
+    libxml_use_internal_errors(TRUE);
+    $xmlobj = simplexml_load_string($_POST['xmldata']);
+    if ($xmlobj === FALSE) {
+      // Parsing Failed
+      foreach (libxml_get_errors() as $error) {
+        watchdog('zohocrm', t("XML parsing error. Error message:<br>\n <pre>%error</pre"), array('%error' => print_r($error, TRUE)), WATCHDOG_ERROR);
+      }
+      libxml_clear_errors();
+      exit;
+    }
+
+    $data = array();
+    foreach ($xmlobj->children() as $field) {
+      $data[(string) $field['val']] = (string) $field;
+    }
+
+    $arguments = array(
+      'webhook_name' => $arg,
+      'post_data' => $data,
+    );
+
+    rules_invoke_event('zohocrm_webhooks_webhook', $arguments);
+  }
+
+  exit;
+}
+
+/**
+ * Returns a list of Zoho CRM Modules
+ * that support Webhooks.
+ */
+function zohocrm_webhooks_modules() {
+  return array(
+    'Leads',
+    'Accounts',
+    'Contacts',
+    'Potentials',
+    'Forecasts',
+    'Tasks',
+    'Events',
+    'Calls',
+    'Cases',
+    'Vendors',
+    'Quotes',
+  );
+}
+
+/**
+ * Generates xmldata parameter required for configuring Zoho CRM webhooks.
+ *
+ * @param $module
+ *   Name of the Zoho CRM module for which to generate XML data
+ *
+ * @return
+ *   XML code
+ */
+function zohocrm_webhooks_xmldata($module) {
+  // Ensure spaces are removed from module name.
+  $module = str_replace(' ', '', $module);
+
+  $xml = new DOMDocument('1.0', 'utf-8');
+  $xml->formatOutput = TRUE;
+  $root = $xml->createElement($module);
+
+  // Record Id is not included in zoho fields info so we have
+  // to add it before looping through all the other fields.
+  $field_name = zohocrm_zoho_module_prefix($module) .' Id';
+  $value = '${'. $module .'.'. $field_name .'}';
+  $el = _zohocrm_webhooks_xmldata_element($xml, $value, $field_name);
+  $root->appendChild($el);
+
+  $fields = zohocrm_get_zoho_fields_info($module, TRUE);
+  foreach ($fields as $field) {
+    $value = '${'. $module .'.'. $field['label'] .'}';
+    $el = _zohocrm_webhooks_xmldata_element($xml, $value, $field['label']);
+    $root->appendChild($el);
+  }
+
+  // Add fields from related modules.
+  $related = zohocrm_get_zoho_fields_related($module);
+  foreach ($related as $related_module => $data) {
+    foreach ($data['fields'] as $field ) {
+      if (isset($fields[$field])) {
+        continue;
+      }
+      $value = '${'. $related_module .'.'. $field .'}';
+      $el = _zohocrm_webhooks_xmldata_element($xml, $value, $field);
+      $root->appendChild($el);
+    }
+  }
+
+  $xml->appendChild($root);
+
+  return $xml->saveXML();
+}
+
+/**
+ * Helper function. Generates single DOM element.
+ */
+function _zohocrm_webhooks_xmldata_element($xml, $value, $attribute) {
+  $fl = $xml->createElement('FL');
+
+  $cdata = $xml->createCDATASection($value);
+  $fl->appendChild($cdata);
+
+  $attr = $xml->createAttribute('val');
+  $attr->value = $attribute;
+  $fl->appendChild($attr);
+
+  return $fl;
+}

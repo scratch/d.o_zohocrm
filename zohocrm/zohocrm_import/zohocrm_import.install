@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for zohocrm_import module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function zohocrm_import_uninstall() {
+  variable_del('zohocrm_import_limit');
+}

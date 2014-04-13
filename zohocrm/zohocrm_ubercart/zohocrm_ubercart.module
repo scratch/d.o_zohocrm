@@ -1,0 +1,430 @@
+<?php
+
+/**
+ * @file
+ * Provides mapping between Ubercart order fields and Zoho CRM
+ */
+
+define('ZOHOCRM_ENDPOINT_UC_ORDER', 'uc_order');
+
+define('ZOHOCRM_UC_ORDER_PANE_GENERAL', t('Order: General Info'));
+define('ZOHOCRM_UC_ORDER_PANE_CUSTOMER', t('Order: Customer Info'));
+define('ZOHOCRM_UC_ORDER_PANE_PAYMENT', t('Order: Payment Info'));
+define('ZOHOCRM_UC_ORDER_PANE_BILLTO', t('Order: Bill To'));
+define('ZOHOCRM_UC_ORDER_PANE_SHIPTO', t('Order: Ship To'));
+
+require_once('zohocrm_ubercart.ca.inc');
+
+/**
+ * Implements hook_zohocrm_endpoint_info().
+ */
+function zohocrm_ubercart_zohocrm_endpoint_info() {
+  return array(
+    ZOHOCRM_ENDPOINT_UC_ORDER => array(
+      'type' => ZOHOCRM_ENDPOINT_UC_ORDER,
+      'label' => t('Ubercart Order'),
+      'description' => t('Description'),
+      'module' => 'zohocrm_ubercart',
+      'key' => 'order_id',
+      'table' => 'uc_orders',
+      'create_callback' => 'zohocrm_ubercart_create',
+      'load_callback' => 'uc_order_load',
+      'save_callback' => 'zohocrm_ubercart_save',
+      'delete_callback' => 'uc_order_delete',
+    ),
+  );
+}
+
+/**
+ * Implements hook_zohocrm_endpoint_fields_info().
+ */
+function zohocrm_ubercart_zohocrm_endpoint_fields_info($endpoint) {
+  switch ($endpoint) {
+    case ZOHOCRM_ENDPOINT_UC_ORDER:
+      $fields = array(
+        // General Info
+        'order_id' => array(
+          'key' => 'order_id',
+          'label' => t('Order Id'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_GENERAL,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+        ),
+        'order_status' => array(
+          'key' => 'order_status',
+          'label' => t('Order Status'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_GENERAL,
+          'handler' => 'zohocrm_ubercart_field_handler_order_status',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'order_total' => array(
+          'key' => 'order_total',
+          'label' => t('Order Total'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_GENERAL,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'product_count' => array(
+          'key' => 'product_count',
+          'label' => t('Product Count'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_GENERAL,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'expected_gp' => array(
+          'key' => 'expected_gp',
+          'label' => t('Expected Gross Profit'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_GENERAL,
+          'handler' => 'zohocrm_ubercart_field_handler_expected_gp',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+        ),
+        'order_url' => array(
+          'key' => 'order_url',
+          'label' => t('Order URL'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_GENERAL,
+          'handler' => 'zohocrm_ubercart_field_handler_order_url',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+        ),
+        'created' => array(
+          'key' => 'created',
+          'label' => t('Date Created'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_GENERAL,
+          'handler' => 'zohocrm_field_handler_timestamp',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+        ),
+        'modified' => array(
+          'key' => 'modified',
+          'label' => t('Date Modified'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_GENERAL,
+          'handler' => 'zohocrm_field_handler_timestamp',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+        ),
+
+        // Customer Info
+        'uid' => array(
+          'key' => 'uid',
+          'label' => t('Customer number'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_CUSTOMER,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'primary_email' => array(
+          'key' => 'primary_email',
+          'label' => t('Primary E-mail'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_CUSTOMER,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+
+        // Payment Info
+        'payment_method' => array(
+          'key' => 'payment_method',
+          'label' => t('Payment method'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_PAYMENT,
+          'handler' => 'zohocrm_ubercart_field_handler_payment_method',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'currency' => array(
+          'key' => 'currency',
+          'label' => t('Currency'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_PAYMENT,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
+        ),
+
+        // Delivery Info
+        'delivery_first_name' => array(
+          'key' => 'delivery_first_name',
+          'label' => t('First Name'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'delivery_last_name' => array(
+          'key' => 'delivery_last_name',
+          'label' => t('Last Name'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        //'delivery_full_name' => array(
+        //  'key' => 'delivery_full_name',
+        //  'label' => t('Full Name'),
+        //  'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+        //  'fields' => array('delivery_first_name', 'delivery_last_name'),
+        //  'handler' => 'zohocrm_field_handler_concatenate',
+        //),
+        'delivery_phone' => array(
+          'key' => 'delivery_phone',
+          'label' => t('Phone Number'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'delivery_company' => array(
+          'key' => 'delivery_company',
+          'label' => t('Company'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'delivery_street1' => array(
+          'key' => 'delivery_street1',
+          'label' => t('Street address 1'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'delivery_street2' => array(
+          'key' => 'delivery_street2',
+          'label' => t('Street address 2'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        //'delivery_street' => array(
+        //  'key' => 'delivery_street',
+        //  'label' => t('Street address combined'),
+        //  'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+        //  'fields' => array('delivery_street1', 'delivery_street2'),
+        //  'handler' => 'zohocrm_field_handler_concatenate',
+        //),
+        'delivery_city' => array(
+          'key' => 'delivery_city',
+          'label' => t('City'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'delivery_zone' => array(
+          'key' => 'delivery_zone',
+          'label' => t('State/Province'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_ubercart_field_handler_zone',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'delivery_postal_code' => array(
+          'key' => 'delivery_postal_code',
+          'label' => t('Postal Code'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'delivery_country' => array(
+          'key' => 'delivery_country',
+          'label' => t('Country'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_SHIPTO,
+          'handler' => 'zohocrm_ubercart_field_handler_country',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+
+        // Billing Info
+        'billing_first_name' => array(
+          'key' => 'billing_first_name',
+          'label' => t('First Name'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'billing_last_name' => array(
+          'key' => 'billing_last_name',
+          'label' => t('Last Name'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        //'billing_full_name' => array(
+        //  'key' => 'billing_full_name',
+        //  'label' => t('Full Name'),
+        //  'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+        //  'fields' => array('billing_first_name', 'billing_last_name'),
+        //  'handler' => 'zohocrm_field_handler_concatenate',
+        //),
+        'billing_phone' => array(
+          'key' => 'billing_phone',
+          'label' => t('Phone number'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'billing_company' => array(
+          'key' => 'billing_company',
+          'label' => t('Company'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'billing_street1' => array(
+          'key' => 'billing_street1',
+          'label' => t('Street address 1'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'billing_street2' => array(
+          'key' => 'billing_street2',
+          'label' => t('Street address 2'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        //'billing_street' => array(
+        //  'key' => 'billing_street',
+        //  'label' => t('Street address combined'),
+        //  'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+        //  'fields' => array('billing_street1', 'billing_street2'),
+        //  'handler' => 'zohocrm_field_handler_concatenate',
+        //),
+        'billing_city' => array(
+          'key' => 'billing_city',
+          'label' => t('City'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'billing_zone' => array(
+          'key' => 'billing_zone',
+          'label' => t('State/Province'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_ubercart_field_handler_zone',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'billing_postal_code' => array(
+          'key' => 'billing_postal_code',
+          'label' => t('Postal Code'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_field_handler_default',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+        'billing_country' => array(
+          'key' => 'billing_country',
+          'label' => t('Country'),
+          'group' => ZOHOCRM_UC_ORDER_PANE_BILLTO,
+          'handler' => 'zohocrm_ubercart_field_handler_country',
+          'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO | ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
+        ),
+      );
+
+      break;
+  }
+
+  return $fields;
+}
+
+function zohocrm_ubercart_field_handler_order_status($src, $dst, $data, $sync_direction, &$dst_object = NULL) {
+  $result = '';
+  $statuses = uc_order_status_list();
+
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      foreach ($statuses as $status) {
+        if ($status['id'] == $data->{$src}) {
+          $result = $status['title'];
+          break;
+        }
+      }
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      foreach ($statuses as $status) {
+        if ($status['title'] == $data->{$src}) {
+          $result = $status['id'];
+          break;
+        }
+      }
+      $dst_object->{$dst} = $result;
+      break;
+  }
+
+  return $result;
+}
+
+function zohocrm_ubercart_field_handler_expected_gp($src, $dst, $data, $sync_direction, &$dst_object = NULL) {
+  $gp = 0;
+  foreach ($data->products as $product) {
+    $gp += ($product->price - $product->cost) * $product->qty;
+  }
+
+  return $gp;
+}
+
+function zohocrm_ubercart_field_handler_order_url($src, $dst, $data, $sync_direction, &$dst_object = NULL) {
+  return url('admin/store/orders/'. $data->order_id, array('absolute' => TRUE));
+}
+
+function zohocrm_ubercart_field_handler_payment_method($src, $dst, $data, $sync_direction, &$dst_object = NULL) {
+  $methods = _payment_method_list();
+  foreach ($methods as $method) {
+    $options[$method['id']] = $method['name'];
+  }
+
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $result = empty($data->{$src}) ? '' : $options[$data->{$src}];
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      $result = array_search($data->{$src}, $options);
+      $dst_object->{$dst} = $result;
+      break;
+  }
+
+  return $result;
+}
+
+function zohocrm_ubercart_field_handler_zone($src, $dst, $data, $sync_direction, &$dst_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $result = uc_zone_get_by_id($data->{$src});
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      $result = db_result(db_query("SELECT zone_id FROM {uc_zones} WHERE zone_name = '%s'", $data->{$src}));
+      $dst_object->{$dst} = $result;
+      break;
+  }
+
+  return $result;
+}
+
+function zohocrm_ubercart_field_handler_country($src, $dst, $data, $sync_direction, &$dst_object = NULL) {
+  switch ($sync_direction) {
+
+    case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
+      $result = uc_country_get_by_id($data->{$src});
+      break;
+
+    case ZOHOCRM_SYNC_ZOHO_TO_DRUPAL:
+      $result = db_result(db_query("SELECT country_id FROM {uc_countries} WHERE country_name = '%s'", $data->{$src}));
+      $dst_object->{$dst} = $result;
+      break;
+  }
+
+  return $result;
+}
+
+function zohocrm_ubercart_create() {
+  $order = uc_order_new();
+
+  return $order;
+}
+
+function zohocrm_ubercart_save(&$order, $record) {
+  uc_order_save($order);
+
+  return $order->order_id;
+}
+
+/**
+ * Implements hook_order().
+ */
+function zohocrm_ubercart_order($op, &$arg1, $arg2) {
+  switch ($op) {
+    case 'delete':
+      zohocrm_record_mapping_delete(array('drupal_id' => $arg1->order_id));
+      break;
+  }
+}
