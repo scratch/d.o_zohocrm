@@ -37,7 +37,7 @@ function zohocrm_field_handler_timestamp($source_field, $destination_field, $dat
           $destination_object->{$destination_field} = $result;
         }
         catch (Exception $e) {
-          watchdog('zohocrm', t('Invalid date value received from Zoho CRM: @value'), array('@value' => $value), WATCHDOG_WARNING);
+          watchdog('zohocrm', 'Invalid date value received from Zoho CRM: @value', array('@value' => $value), WATCHDOG_WARNING);
         }
       }
       break;

@@ -92,7 +92,7 @@ function zohocrm_user_zohocrm_endpoint_fields_info($endpoint) {
 }
 
 function zohocrm_user_field_handler_url($src, $dst, $data, $sync_direction, &$dst_object = NULL) {
-  return url('user/'. $data->uid, array('absolute' => TRUE));
+  return url('user/' . $data->uid, array('absolute' => TRUE));
 }
 
 function zohocrm_user_create() {
@@ -112,7 +112,7 @@ function zohocrm_user_save(&$account, $record) {
 }
 
 function zohocrm_user_delete($uid) {
-  user_delete(array(), $uid);
+  user_delete(array(), $uid);  /* -- nk. TODO. Replace with user_cancel */
 }
 
 function zohocrm_user_find($zoho_data, $mapping) {
@@ -128,7 +128,6 @@ function zohocrm_user_find($zoho_data, $mapping) {
 
 /**
  * Implements hook_user().
- */
 function zohocrm_user_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
     case 'delete':
@@ -140,3 +139,13 @@ function zohocrm_user_user($op, &$edit, &$account, $category = NULL) {
       break;
   }
 }
+ */
+
+/** zohocrm_user_delete -- nk. REVISIT
+ */
+function zohocrm_user_delete($account) {
+    // Check if user deletion will be synced to Zoho. If not,
+    // clean up record mapping here.
+    if (zohocrm_is_receiving_zoho_data() || !zohocrm_dtz_delete_sync_status($account, 'user')) {
+      zohocrm_record_mapping_delete(array('drupal_id' => $account->uid));
+  }

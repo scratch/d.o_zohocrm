@@ -1,12 +1,19 @@
 name = "Zoho CRM"
-description = "Zoho CRM integration"
-core = 6.x
-php = 5.3
+description = "Zoho CRM integration, 7.x port Alpha version"
 package = Zoho CRM
+php = 5.3
+core = 7.x
+files[] = autoloader/ClassLoader.php
+files[] = zohocrm.admin.inc
+files[] = zohocrm.handlers.inc
+files[] = zohocrm.info
+files[] = zohocrm.install
+files[] = zohocrm.module
+files[] = zohocrm.rules.inc
 
 ; Information added by Drupal.org packaging script on 2014-01-20
-version = "6.x-1.x-dev"
-core = "6.x"
-project = "zohocrm"
-datestamp = "1390220307"
+; version = "7.x-1.x-dev"
+; core = "7.x"
+; project = "zohocrm"
+; datestamp = "1390220307"
 

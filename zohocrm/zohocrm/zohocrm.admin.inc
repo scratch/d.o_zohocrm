@@ -79,17 +79,17 @@ function zohocrm_mapping_list() {
   foreach ($mappings as $mapping) {
     if ($mapping['status']) {
       $class = '';
-      $toggle_status = l(t('Disable'), 'admin/settings/zohocrm/mapping/'. $mapping['mapping_name'] .'/disable');
+      $toggle_status = l(t('Disable'), 'admin/settings/zohocrm/mapping/' . $mapping['mapping_name'] . '/disable');
     }
     else {
       $class = 'disabled';
-      $toggle_status = l(t('Enable'), 'admin/settings/zohocrm/mapping/'. $mapping['mapping_name'] .'/enable');
+      $toggle_status = l(t('Enable'), 'admin/settings/zohocrm/mapping/' . $mapping['mapping_name'] . '/enable');
     }
     $links = array(
-      l(t('Edit Description'), 'admin/settings/zohocrm/mapping/'. $mapping['mapping_name'] .'/edit'),
-      l(t('Fields'), 'admin/settings/zohocrm/mapping/'. $mapping['mapping_name'] .'/fields'),
+      l(t('Edit Description'), 'admin/settings/zohocrm/mapping/' . $mapping['mapping_name'] . '/edit'),
+      l(t('Fields'), 'admin/settings/zohocrm/mapping/' . $mapping['mapping_name'] . '/fields'),
       $toggle_status,
-      l(t('Delete'), 'admin/settings/zohocrm/mapping/'. $mapping['mapping_name'] .'/delete'),
+      l(t('Delete'), 'admin/settings/zohocrm/mapping/' . $mapping['mapping_name'] . '/delete'),
     );
     $rows[] = array(
       'data' => array(
@@ -233,11 +233,11 @@ function zohocrm_mapping_fields_form(&$form_state, $mapping) {
   $description = check_plain($mapping['description']);
   $form['description'] = array(
     '#type' => 'markup',
-    '#value' => '<h2>'. $title .'</h2><p>'. $description .'</p>',
+    '#value' => '<h2>' . $title . '</h2><p>' . $description . '</p>',  /* TODO: -- nk. use check_plain() or fileter_xss to sanitise title, descr */
   );
 
   $defaults = $mapping['fields'];
-  $default_option = array('' => '<'. t('none') .'>');
+  $default_option = array('' => '<' . t('none') . '>');
 
   // Drupal to Zoho
   $form['dtz'] = array(
@@ -461,12 +461,12 @@ function zohocrm_mapping_fields_rows($form) {
     else {
       if ($field['field_name']['#required']) {
         $required_class = ' required';
-        $required = '<span class="form-required" title="'. t('This field is required.') .'"> *</span>';
+        $required = '<span class="form-required" title="' . t('This field is required.') . '"> *</span>';
       }
       else {
         $required = $required_class = '';
       }
-      $row[] = array('data' => drupal_render($field['field_name']) . $required, 'class' => 'field-name'. $required_class);
+      $row[] = array('data' => drupal_render($field['field_name']) . $required, 'class' => 'field-name' . $required_class);
       $row[] = array('data' => drupal_render($field['src']), 'class' => 'source-field');
       $row[] = array('data' => drupal_render($field['default_value']) . drupal_render($field['dst']) . drupal_render($field['mfid']) . drupal_render($field['sync_direction']), 'class' => 'default-value');
     }
@@ -612,7 +612,7 @@ function zohocrm_zoho_select_options($zoho_module) {
     }
 
     // Add record Id as first field in the second optgroup.
-    $key = zohocrm_zoho_module_prefix($zoho_module) .' Id';
+    $key = zohocrm_zoho_module_prefix($zoho_module) . ' Id';
     $zoho_options[$second_optgroup] = array($key => $key) + $zoho_options[$second_optgroup];
   }
 

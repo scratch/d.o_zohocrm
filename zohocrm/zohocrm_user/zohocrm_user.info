@@ -1,13 +1,15 @@
 name = "Zoho CRM User"
 description = "Zoho CRM and user integration"
 dependencies[] = zohocrm
-core = 6.x
 php = 5.3
 package = Zoho CRM
+core = 7.x
+files[] = zohocrm_user.module
+files[] = zohocrm_user.rules.inc
 
 ; Information added by Drupal.org packaging script on 2014-01-20
-version = "6.x-1.x-dev"
-core = "6.x"
-project = "zohocrm"
-datestamp = "1390220307"
+;version = "6.x-1.x-dev"
+;core = "6.x"
+;project = "zohocrm"
+;datestamp = "1390220307"
 

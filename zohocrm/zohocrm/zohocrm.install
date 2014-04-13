@@ -9,7 +9,7 @@
  * Implements hook_install().
  */
 function zohocrm_install() {
-  drupal_install_schema('zohocrm');
+  /* drupal_install_schema('zohocrm');  -- nk REVISIT. Not require in 7.x */
 }
 
 /**
@@ -171,7 +171,7 @@ function zohocrm_schema() {
  * Implements hook_uninstall().
  */
 function zohocrm_uninstall() {
-  drupal_uninstall_schema('zohocrm');
+  /* drupal_uninstall_schema('zohocrm'); -- nk. No need to explicitely uninstall */
 
   variable_del('zohocrm_authtoken');
   variable_del('zohocrm_client_disabled');
