@@ -120,7 +120,9 @@ function zohocrm_webhooks_rules_action_delete_drupal_object($zoho_data, $setting
     $original_user = $user;
     $old_state = session_save_session();
     session_save_session(FALSE);
-    $user = user_load(array('uid' => 1));
+    /* -- nk. $user = user_load(array('uid' => 1));
+     */
+    $user = user_load(1);
 
     // Delete drupal object
     $endpoint['delete_callback']($drupal_id);

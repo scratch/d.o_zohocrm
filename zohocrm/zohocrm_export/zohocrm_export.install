@@ -22,7 +22,9 @@ function zohocrm_export_uninstall() {
   $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export'));
   if (is_dir($path)) {
     $no_mask = array('.', '..', 'CVS');
-    file_scan_directory($path, '^zcrm_.*\.csv$', $no_mask, 'file_delete');
+    /* -- nk file_scan_directory($path, '^zcrm_.*\.csv$', $no_mask, 'file_delete');
+     */
+    file_scan_directory($path, '/^zcrm_.*\.csv$/', $no_mask, 'file_delete');
 
     db_query("DELETE FROM {files} WHERE filename LIKE 'zcrm_%%' AND filepath LIKE '%s%%'", $path .'/');
   }
@@ -48,7 +50,9 @@ function zohocrm_export_requirements($phase) {
         $path = $dir .'/test.txt';
         file_save_data('Testing', $path);
         $url = url($path, array('absolute' => TRUE));
-        $response = drupal_http_request($url, array(), 'HEAD');
+        /* -- nk. $response = drupal_http_request($url, array(), 'HEAD');
+         */
+        $response = drupal_http_request($url, array());
         if ($response->code != '403') {
           $requirements['zohocrm_export'] = array(
             'title'       => t('Zoho CRM export directory'),

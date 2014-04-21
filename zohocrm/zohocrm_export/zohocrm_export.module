@@ -44,8 +44,20 @@ function zohocrm_export_menu() {
 /**
  * Implements hook_perm().
  */
-function zohocrm_export_perm() {
+function zohocrm_export_permission() {
+  /*
   return array('export data to zohocrm');
+   */
+
+
+  return array(
+    'export data to zohocrm' =>  array(
+      'title' => t('export data to ZohoCRM'),
+      'description' => t('Perform data export to ZohoCRM.'),
+    ),
+  );
+
+
 }
 
 /**
@@ -53,9 +65,12 @@ function zohocrm_export_perm() {
  */
 function zohocrm_export_cron() {
   // Remove exported CSV files that are older than ZOHOCRM_EXPORT_MAX_FILE_AGE.
-  $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export')) .'/';
+  $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export')) . '/';
   $sql = "SELECT * FROM {files} WHERE filename LIKE 'zcrm_%%' AND filepath LIKE '%s%%' AND timestamp < %d";
-  $result = db_query($sql, $path, time() - ZOHOCRM_EXPORT_MAX_FILE_AGE);
+  /* $result = db_query($sql, $path, time() - ZOHOCRM_EXPORT_MAX_FILE_AGE);
+   -- nk.
+   */
+  $result = db_query($sql, $path, REQUEST_TIME - ZOHOCRM_EXPORT_MAX_FILE_AGE);
 
   while ($file = db_fetch_object($result)) {
     if (file_exists($file->filepath)) {
@@ -76,7 +91,7 @@ function zohocrm_export_cron() {
 function zohocrm_file_download($filepath) {
   global $user;
 
-  if (strpos($filepath, variable_get('zohocrm_export_directory', 'zohocrm_export') .'/') === 0) {
+  if (strpos($filepath, variable_get('zohocrm_export_directory', 'zohocrm_export') . '/') === 0) {
     $result = db_query("SELECT * FROM {files} WHERE filepath = '%s'", file_create_path($filepath));
     $file = db_fetch_object($result);
 
@@ -101,7 +116,7 @@ function zohocrm_export_batch_operation($mapping, $endpoint, $save_path, $max_re
 
     $context['sandbox']['date'] = date('YmdHis');
     $context['sandbox']['file_count'] = 0;
-    $context['sandbox']['file_prefix'] = $save_path .'/zcrm_'. $mapping['zoho_module'] .'_'. $context['sandbox']['date'] .'_';
+    $context['sandbox']['file_prefix'] = $save_path . '/zcrm_' . $mapping['zoho_module'] . '_' . $context['sandbox']['date'] . '_';
     $context['sandbox']['header'] = _zohocrm_export_csv_header($mapping, $endpoint);
 
     $f = _zohocrm_export_new_file($context);
@@ -153,7 +168,7 @@ function zohocrm_export_batch_finished($success, $results, $operations) {
   global $user;
 
   if ($success) {
-    $timestamp = time();
+    $timestamp = REQUEST_TIME;   /* -- nk $timestamp = time(); */
     foreach ($results['files'] as $path) {
       $file = new stdClass();
       $file->filepath = $path;
@@ -168,7 +183,7 @@ function zohocrm_export_batch_finished($success, $results, $operations) {
     drupal_set_message(t('@count records exported.', array('@count' => $results['count'])));
   }
   else {
-    drupal_set_message("Export failed.", 'error');
+    drupal_set_message(t("Export failed."), 'error');
   }
 }
 
@@ -176,7 +191,7 @@ function _zohocrm_export_new_file(&$context) {
   $context['sandbox']['progress_curr_file'] = 0;
   $context['sandbox']['file_size'] = 0;
   $context['sandbox']['file_count']++;
-  $context['sandbox']['current_file'] = $context['sandbox']['file_prefix'] . str_pad($context['sandbox']['file_count'], 3, '0', STR_PAD_LEFT) .'.csv';
+  $context['sandbox']['current_file'] = $context['sandbox']['file_prefix'] . str_pad($context['sandbox']['file_count'], 3, '0', STR_PAD_LEFT) . '.csv';
   $context['results']['files'][] = $context['sandbox']['current_file'];
   $f = fopen($context['sandbox']['current_file'], "a");
   fputcsv($f, $context['sandbox']['header']);
