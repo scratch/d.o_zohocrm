@@ -1,3 +1,16 @@
+
+Setting up zohoCRM module
+-------------------------
+
+1. Download zohocrm library from github. 
+2. configure Zoho CRM API auth token at admin/settings/zohocrm/settings
+3. Add (create) field mapping
+4. Configure fields for field mapping at admin/settings/zohocrm/mapping/<mapping_name>/fields
+5. Install and configure rules module to trigger sending of Drupal data to Zoho every time user object (or node) is saved.
+
+
+Testing Install
+---------------
 Assuming you have zohocrm, zohocrm_user and zohocrm_node enabled, PHP library installed and auth token configured.
 
 1. Go to admin/settings/zohocrm/mapping/add and create field mapping:
@@ -48,6 +61,19 @@ Assuming you have zohocrm, zohocrm_user and zohocrm_node enabled, PHP library in
       Event: Node - After updating existing content
       Condition: Node - content has type (select Profile content type)
       Action: Zoho CRM - Send node data to Zoho (select mapping profile_contact)
+
+13. There is a Drupal variable which you can use to enable debug
+messages. Every time data is being sent to Zoho you will get outgoing
+data and Zoho response printed on the page as drupal message as well
+as logged in the file /tmp/drupal_debug.txt. This functionality
+depends on devel module so make sure devel is enabled before you
+enable the variable. There is no UI for configuring this variable
+but you can use drush to quickly turn it on: Enable debug mode:
+
+      drush vset zohocrm_debug_mode 1 Disable debug mode
+            drush vset zohocrm_debug_mode 0
+
+
 
 As you can see from the above description, due to lack of custom
 fields in Drupal user object we are forced to use content_profile
