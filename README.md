@@ -29,6 +29,8 @@ Assuming you have zohocrm, zohocrm_user and zohocrm_node enabled, PHP library in
       Last Name
 
 4. Install content_profile module
+  Need to enable all the (sub) modules content_profile_tokens, content_profile_registration. Also need to install 
+  token module
 
 5. Go to admin/content/types/profile and check the checkbox "Use this content type as a content profile for users"
 
@@ -62,19 +64,6 @@ Assuming you have zohocrm, zohocrm_user and zohocrm_node enabled, PHP library in
       Condition: Node - content has type (select Profile content type)
       Action: Zoho CRM - Send node data to Zoho (select mapping profile_contact)
 
-13. There is a Drupal variable which you can use to enable debug
-messages. Every time data is being sent to Zoho you will get outgoing
-data and Zoho response printed on the page as drupal message as well
-as logged in the file /tmp/drupal_debug.txt. This functionality
-depends on devel module so make sure devel is enabled before you
-enable the variable. There is no UI for configuring this variable
-but you can use drush to quickly turn it on: Enable debug mode:
-
-      drush vset zohocrm_debug_mode 1 Disable debug mode
-            drush vset zohocrm_debug_mode 0
-
-
-
 As you can see from the above description, due to lack of custom
 fields in Drupal user object we are forced to use content_profile
 module if we want to sync Drupal user with Zoho Contact.
@@ -85,6 +74,23 @@ to Zoho and then perform similar steps as describe above. However,
 this time you would need only one field mapping (Account node to
 Zoho Accounts) and two rules (one for node insert and one for node
 update event).
+
+
+13. There is a Drupal variable which you can use to enable debug
+messages. Every time data is being sent to Zoho you will get outgoing
+data and Zoho response printed on the page as drupal message as well
+as logged in the file /tmp/drupal_debug.txt. This functionality
+depends on devel module so make sure devel is enabled before you
+enable the variable. There is no UI for configuring this variable
+but you can use drush to quickly turn it on: 
+
+Enable debug mode:
+    drush vset zohocrm_debug_mode 1 
+
+Disable debug mode:
+    drush vset zohocrm_debug_mode 0
+
+
 
 As far as porting to D7 is concerned, I'm expecting that most parts
 of the module code will be quite straightforward to port expect one
