@@ -146,15 +146,20 @@ function zohocrm_theme() {
 }
 
 function zohocrm_mapping_load($name) {
-  return db_fetch_array(db_query("SELECT * FROM {zohocrm_mapping} WHERE mapping_name = '%s'", $name));
+  /* -- nk return db_fetch_array(db_query("SELECT * FROM {zohocrm_mapping} WHERE mapping_name = '%s'", $name));
+   */
+  $result = db_query("SELECT * FROM {zohocrm_mapping} WHERE mapping_name = :name", array(':name' => $name));
+  return  $result;
 }
 
 function zohocrm_mapping_fields_load($name) {
   $mapping = zohocrm_mapping_load($name);
 
-  $fields = array();
-  $results = db_query("SELECT * FROM {zohocrm_mapping_fields} WHERE mapping_name = '%s'", $name);
-  while ($row = db_fetch_array($results)) {
+  $fields =  array();
+  $result = db_query("SELECT * FROM {zohocrm_mapping_fields} WHERE mapping_name = :name", array(':name' => $name));
+  /* -- nk while ($row = db_fetch_array($results)) {
+   */
+  foreach ($result as $row) {
     $fields[$row['dst']] = $row;
   }
   if (!empty($fields)) {
@@ -334,7 +339,9 @@ function zohocrm_get_mappings($active = TRUE) {
   $where = $active ? ' WHERE status = 1' : '';
   $sql = "SELECT * FROM {zohocrm_mapping}" . $where;
   $result = db_query($sql);
-  while ($row = db_fetch_array($result)) {
+  /* -- nk while ($row = db_fetch_array($result)) {
+   */
+  foreach ($result as $row) {
     $mappings[$row['mapping_name']] = $row;
   }
 

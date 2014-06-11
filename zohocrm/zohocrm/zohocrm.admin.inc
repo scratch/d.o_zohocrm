@@ -5,7 +5,9 @@
  * Admin interface.
  */
 
-function zohocrm_admin_settings(&$form_state) {
+/* function zohocrm_admin_settings(&$form_state) {
+ */
+function zohocrm_admin_settings() {
   $form = array();
 
   $form['zohocrm_client_disabled'] = array(
