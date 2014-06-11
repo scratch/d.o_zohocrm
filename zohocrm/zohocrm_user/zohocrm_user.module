@@ -128,6 +128,7 @@ function zohocrm_user_find($zoho_data, $mapping) {
 
 /**
  * Implements hook_user().
+ */
 function zohocrm_user_user($op, &$edit, &$account, $category = NULL) {
   switch ($op) {
     case 'delete':
@@ -139,13 +140,13 @@ function zohocrm_user_user($op, &$edit, &$account, $category = NULL) {
       break;
   }
 }
- */
 
 /** zohocrm_user_delete -- nk. REVISIT
- */
 function zohocrm_user_delete($account) {
     // Check if user deletion will be synced to Zoho. If not,
     // clean up record mapping here.
     if (zohocrm_is_receiving_zoho_data() || !zohocrm_dtz_delete_sync_status($account, 'user')) {
       zohocrm_record_mapping_delete(array('drupal_id' => $account->uid));
   }
+}
+ */
