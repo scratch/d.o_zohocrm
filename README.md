@@ -2,11 +2,14 @@
 Setting up zohoCRM module
 -------------------------
 
+
 1. Download zohocrm library from github. 
 2. configure Zoho CRM API auth token at admin/settings/zohocrm/settings
 3. Add (create) field mapping
 4. Configure fields for field mapping at admin/settings/zohocrm/mapping/<mapping_name>/fields
 5. Install and configure rules module to trigger sending of Drupal data to Zoho every time user object (or node) is saved.
+
+Note: zohoCRM module required curl/php-curl installed to work. WSOD if php-curl is not installed.
 
 
 Testing Install

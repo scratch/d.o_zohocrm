@@ -57,7 +57,10 @@ function zohocrm_admin_settings() {
     '#type' => 'select',
     '#title' => t('Input Format'),
     '#description' => t("Input format to be used when saving Zoho data to Drupal's textarea fields."),
-    '#default_value' => variable_get('zohocrm_filter_format', FILTER_FORMAT_DEFAULT),
+    /* -- nk. '#default_value' => variable_get('zohocrm_filter_format', FILTER_FORMAT_DEFAULT),
+        FILTER_FORMAT_DEFAULT Not present in D7?
+     */
+    '#default_value' => variable_get('zohocrm_filter_format'),  
     '#options' => $options,
     '#weight' => -4,
   );
@@ -111,6 +114,8 @@ function zohocrm_mapping_list() {
   return $output;
 }
 
+/* function zohocrm_mapping_edit_form(&$form_state, $mapping) {
+ */
 function zohocrm_mapping_edit_form(&$form_state, $mapping) {
 
   $form = array(
