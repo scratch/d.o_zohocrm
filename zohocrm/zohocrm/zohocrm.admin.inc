@@ -545,13 +545,26 @@ function zohocrm_mapping_add_form_validate($form, &$form_state) {
 }
 
 function zohocrm_mapping_add_form_submit($form, &$form_state) {
-  $args = array(
+  /* $args = array(
     $form_state['values']['mapping_name'],
     $form_state['values']['description'],
     $form_state['values']['drupal_endpoint'],
     $form_state['values']['zoho_module'],
   );
   db_query("INSERT INTO {zohocrm_mapping} (`mapping_name`, `description`, `drupal_endpoint`, `zoho_module`, `status`) VALUES ('%s', '%s', '%s', '%s', 1)", $args);
+   */
+
+   $result = db_insert ('zohocrm_mapping')
+    ->fields(array(
+      'mapping_name' =>     $form_state['values']['mapping_name'],
+      'description' =>      $form_state['values']['description'],
+      'drupal_endpoint' =>  $form_state['values']['drupal_endpoint'],
+      'zoho_module' =>      $form_state['values']['zoho_module'],
+      'status' =>           1,
+    ))
+    ->execute();
+
+  return $result;
 }
 
 /**
