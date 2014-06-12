@@ -483,11 +483,18 @@ function zohocrm_mapping_fields_rows($form) {
   return $rows;
 }
 
-function zohocrm_mapping_add_form(&$form_state) {
+/* function zohocrm_mapping_add_form(&$form_state) {
+ */
+function zohocrm_mapping_add_form($form, &$form_state) {
 
+  
+  /*
   $form = array(
     '#redirect' => 'admin/settings/zohocrm/mapping',
   );
+  */
+
+  $form['#redirect'] = 'admin/settings/zohocrm/mapping';
 
   $endpoints = zohocrm_endpoint_info();
 
