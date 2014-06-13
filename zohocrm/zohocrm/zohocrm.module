@@ -342,7 +342,6 @@ function zohocrm_get_mappings($active = TRUE) {
   /* -- nk while ($row = db_fetch_array($result)) {
    */
   foreach ($result as $row) {
-    var_dump($row);
     $mappings[$row['mapping_name']] = $row;
   }
 
