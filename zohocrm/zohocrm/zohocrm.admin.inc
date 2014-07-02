@@ -108,10 +108,29 @@ function zohocrm_mapping_list() {
     );
   }
 
-  $header = array(t('Name'), t('Description'), t('Drupal Endpoint'), t('Zoho Module'), '');
-  $output .= theme('table', $header, $rows);
+  /* From menu.admin.inc
+  $result = db_query("SELECT * FROM {menu_custom} ORDER BY title", array(), array('fetch' => PDO::FETCH_ASSOC));
+  $header = array(t('Title'), array('data' => t('Operations'), 'colspan' => '3'));
+  $rows = array();
+  foreach ($result as $menu) {
+    $row = array(theme('menu_admin_overview', array('title' => $menu['title'], 'name' => $menu['menu_name'], 'description' => $menu['description'])));
+    $row[] = array('data' => l(t('list links'), 'admin/structure/menu/manage/' . $menu['menu_name']));
+    $row[] = array('data' => l(t('edit menu'), 'admin/structure/menu/manage/' . $menu['menu_name'] . '/edit'));
+    $row[] = array('data' => l(t('add link'), 'admin/structure/menu/manage/' . $menu['menu_name'] . '/add'));
+    $rows[] = $row;
+  }
+   */
 
-  return $output;
+  /* $header = array(t('Name'), array('data' => t('Operations'), 'colspan' => '3'), 'data' => t('Operations'), 'colspan' => '3');
+   */
+  $header = array(array('data' => t('Name')), 
+      array('data' => t('Description')),
+      array('data' => t('Drupal Endpoint')),
+      array('data' => t('Zoho Module'))
+    );
+
+  $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  return  $output;
 }
 
 /* function zohocrm_mapping_edit_form(&$form_state, $mapping) {
