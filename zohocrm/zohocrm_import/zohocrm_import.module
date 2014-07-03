@@ -26,7 +26,7 @@ function zohocrm_import_menu() {
 /**
  * Implements hook_perm().
  */
-function zohocrm_import_perm() {
+function zohocrm_import_permission() {
   return array('import zohocrm data');
 }
 
@@ -80,7 +80,7 @@ function zohocrm_import_batch_finished($success, $results, $operations) {
     drupal_set_message(t('@count records imported.', array('@count' => $results['count'])));
   }
   else {
-    drupal_set_message("Import failed.", 'error');
+    drupal_set_message(t("Import failed."), 'error');
   }
 
   // Delete the CSV file.
@@ -101,7 +101,7 @@ function zohocrm_import_batch_finished($success, $results, $operations) {
  */
 function zohocrm_import_prepare_record($row, $header, $mapping) {
   $mapping = zohocrm_mapping_load($mapping);
-  $owner = substr($mapping['zoho_module'], 0, -1) .' Owner';
+  $owner = substr($mapping['zoho_module'], 0, -1) . ' Owner';
   $users = zohocrm_get_users();
 
   $record = array();

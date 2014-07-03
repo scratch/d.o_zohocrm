@@ -1,13 +1,18 @@
 name = "Zoho CRM Import"
 description = "Import Zoho CRM data from CSV file"
 dependencies[] = zohocrm
-core = 6.x
+core = 7.x
 php = 5.3
 package = Zoho CRM
 
+files[] = zohocrm_import.admin.inc
+files[] = zohocrm_import.info
+files[] = zohocrm_import.install
+files[] = zohocrm_import.module
+
 ; Information added by Drupal.org packaging script on 2014-01-20
-version = "6.x-1.x-dev"
-core = "6.x"
-project = "zohocrm"
-datestamp = "1390220307"
+; version = "6.x-1.x-dev"
+; core = "6.x"
+; project = "zohocrm"
+; datestamp = "1390220307"
 

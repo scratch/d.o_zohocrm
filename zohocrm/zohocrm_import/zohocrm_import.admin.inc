@@ -58,7 +58,7 @@ function zohocrm_import_form_review_page(&$form_state) {
   }
   $form['preview'] = array(
     '#type' => 'markup',
-    '#value' => theme('item_list', $items),
+    '#value' => theme('item_list', array('rows' => $items)),
   );
 
   $form['cancel'] = array(
