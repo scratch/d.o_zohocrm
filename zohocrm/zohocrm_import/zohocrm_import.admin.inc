@@ -4,16 +4,18 @@
  * @file
  */
 
-function zohocrm_import_form(&$form_state) {
+function zohocrm_import_form($form, &$form_state) {
 
   if (isset($form_state['storage']['file'])) {
     // Display second form page.
     return zohocrm_import_form_review_page($form_state);
   }
 
+/* -- nk. Form is a param; only in D7?
   $form = array(
     '#attributes' => array('enctype' => "multipart/form-data"),
   );
+ */
 
   $form['csv_upload'] = array(
     '#type' => 'file',

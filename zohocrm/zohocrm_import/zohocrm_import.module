@@ -27,7 +27,7 @@ function zohocrm_import_menu() {
  * Implements hook_perm().
  */
 function zohocrm_import_permission() {
-  return array('import zohocrm data');
+  return array('title' => 'import zohocrm data');
 }
 
 /**
