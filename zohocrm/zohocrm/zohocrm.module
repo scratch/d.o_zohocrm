@@ -360,15 +360,18 @@ function zohocrm_get_mappings($active = TRUE) {
 
   // BUG: Status = 1 condition should be applied *only if $active == TRUE.
   $result = db_select('zohocrm_mapping', 'm', array('fetch' => PDO::FETCH_ASSOC))
+    /*->fields('m', array('mapping_name'))
+     */
     ->fields('m')
     ->condition('status', 1, '=')
     ->execute()
-    ->fetchAllAssoc('mid');
+    ->fetchAll();
 
   $mappings = array();
   foreach ($result as $v)  {
     $mappings[] = $v;
   }
+
 
   return $mappings;
 }
@@ -382,7 +385,9 @@ function zohocrm_mappings_select_options() {
   $options = array();
 
   if (!empty($mappings)) {
-    $keys = array_keys($mappings);
+    /* $keys = array_keys($mappings);
+     */
+    $keys = array_keys($mappings[0]);
     $options = array('' => '') + array_combine($keys, $keys);
   }
 
