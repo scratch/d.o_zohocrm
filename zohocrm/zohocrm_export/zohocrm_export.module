@@ -65,12 +65,19 @@ function zohocrm_export_permission() {
  */
 function zohocrm_export_cron() {
   // Remove exported CSV files that are older than ZOHOCRM_EXPORT_MAX_FILE_AGE.
-  $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export')) . '/';
+  /* $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export')) . '/';
+   */
+  $path = variable_get('zohocrm_export_directory', 'zohocrm_export') . '/';
+  $retval = file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+  if (!$retval) {
+      watchdog('zohocrm', 'Could not create zohocrm export path: "%path"', array('%path' => $path), 'error');
+  } 
   $sql = "SELECT * FROM {files} WHERE filename LIKE 'zcrm_%%' AND filepath LIKE '%s%%' AND timestamp < %d";
   /* $result = db_query($sql, $path, time() - ZOHOCRM_EXPORT_MAX_FILE_AGE);
    -- nk.
    */
-  $result = db_query($sql, $path, REQUEST_TIME - ZOHOCRM_EXPORT_MAX_FILE_AGE);
+  /* REVISIT: convert to array */
+  $result = db_query($sql, $path, REQUEST_TIME - ZOHOCRM_EXPORT_MAX_FILE_AGE); /* ERROR */
 
   while ($file = db_fetch_object($result)) {
     if (file_exists($file->filepath)) {
@@ -92,6 +99,9 @@ function zohocrm_file_download($filepath) {
   global $user;
 
   if (strpos($filepath, variable_get('zohocrm_export_directory', 'zohocrm_export') . '/') === 0) {
+    $retval = file_prepare_directory($filepath, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+    /* $result = db_query("SELECT * FROM {files} WHERE filepath = '%s'", $filepath);
+     */
     $result = db_query("SELECT * FROM {files} WHERE filepath = '%s'", file_create_path($filepath));
     $file = db_fetch_object($result);
 
