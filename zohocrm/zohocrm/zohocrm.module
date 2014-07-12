@@ -369,7 +369,7 @@ function zohocrm_get_mappings($active = TRUE) {
 
   $mappings = array();
   foreach ($result as $v)  {
-    $mappings[] = $v;
+    $mappings[$v['mapping_name']] = $v;
   }
 
 
@@ -385,9 +385,7 @@ function zohocrm_mappings_select_options() {
   $options = array();
 
   if (!empty($mappings)) {
-    /* $keys = array_keys($mappings);
-     */
-    $keys = array_keys($mappings[0]);
+    $keys = array_keys($mappings);
     $options = array('' => '') + array_combine($keys, $keys);
   }
 
