@@ -4,9 +4,7 @@
  * @file
  */
 
-function zohocrm_export_form(&$form_state) {
-  $form = array();
-
+function zohocrm_export_form($form, &$form_state) {
   $form['mapping'] = array(
     '#type' => 'select',
     '#title' => t('Mapping'),
