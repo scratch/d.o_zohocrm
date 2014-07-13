@@ -45,8 +45,13 @@ function zohocrm_export_form($form, &$form_state) {
 function zohocrm_export_form_validate($form, &$form_state) {
   global $user;
 
+  /*
   $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export') .'/'. $user->uid);
   $result = file_check_directory($path, FILE_CREATE_DIRECTORY);
+  if ($result === FALSE) {
+   */
+  $path = variable_get('zohocrm_export_directory', 'zohocrm_export' . '/' . $user->uid);
+  $result = file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
   if ($result === FALSE) {
     form_set_error('file_system', t('Files directory is not writable.
                     Check your <a href="!file_system">file system settings</a>
@@ -127,7 +132,12 @@ function _zohocrm_export_table_rows($downloads) {
       $row = array(
         check_plain($file->filename),
         format_size($file->filesize),
-        l(t('Download'), 'system/files/'. str_replace(file_create_path() .'/', '', $file->filepath)),
+        /* l(t('Download'), 'system/files/'. str_replace(file_create_path() .'/', '', $file->filepath)),
+         */
+        /* -- nk. file_create_path without any param implies the ./files dir.
+         l(t('Download'), 'system/files/' . str_replace(file_create_path() .'/', '', $file->filepath)),
+         */
+        l(t('Download'), 'system/files/' . str_replace('files' . '/', '', $file->filepath)),
       );
       $rows[] = $row;
     }

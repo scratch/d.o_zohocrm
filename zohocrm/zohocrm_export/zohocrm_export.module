@@ -76,8 +76,8 @@ function zohocrm_export_cron() {
   /* $result = db_query($sql, $path, time() - ZOHOCRM_EXPORT_MAX_FILE_AGE);
    -- nk.
    */
-  /* REVISIT: convert to array */
-  $result = db_query($sql, $path, REQUEST_TIME - ZOHOCRM_EXPORT_MAX_FILE_AGE); /* ERROR */
+  /* REVISIT: convert to array OK? */
+  $result = db_query($sql, array($path), array(REQUEST_TIME - ZOHOCRM_EXPORT_MAX_FILE_AGE)); /* ERROR */
 
   while ($file = db_fetch_object($result)) {
     if (file_exists($file->filepath)) {

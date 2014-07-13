@@ -24,8 +24,12 @@ function zohocrm_export_install() {
  * Implements hook_uninstall().
  */
 function zohocrm_export_uninstall() {
-  $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export')); /* TODO use file_prepare_directory */
-  if (is_dir($path)) {
+  /* $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export')); 
+   */
+  $path = variable_get('zohocrm_export_directory', 'zohocrm_export');
+  $retval = file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+
+  if ($retval && is_dir($path)) {
     $no_mask = array('.', '..', 'CVS');
     /* -- nk file_scan_directory($path, '^zcrm_.*\.csv$', $no_mask, 'file_delete');
      */
@@ -47,11 +51,21 @@ function zohocrm_export_requirements($phase) {
   switch ($phase) {
     case 'runtime':
       // Check whether zohocrm_export directory is protected
+      /* -- nk
       $dir = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export'));
       if (file_check_directory($dir, FILE_CREATE_DIRECTORY)) {
         if (!file_exists($dir .'/.htaccess')) {
           _zohocrm_export_create_htaccess();
         }
+        */
+
+      $path = variable_get('zohocrm_export_directory', 'zohocrm_export');
+      $retval = file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+      if ($retval)  {
+        if (!file_exists($path . '/.htaccess')) {
+            _zohocrm_export_create_htaccess();
+        }
+
         $path = $dir .'/test.txt';
         file_save_data('Testing', $path);
         $url = url($path, array('absolute' => TRUE));
