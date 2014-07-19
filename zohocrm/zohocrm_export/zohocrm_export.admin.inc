@@ -129,15 +129,15 @@ function _zohocrm_export_table_rows($downloads) {
     $rows[][] = array('data' => t('Files for Zoho CRM module %module exported on @date', array('%module' => $module, '@date' => format_date($timestamp))), 'class' => 'section-label', 'colspan' => 3, 'style' => 'font-weight: bold');
 
     foreach ($files as $file) {
-      $row = array(
-        check_plain($file->filename),
+      $row = array (
+        check_plain ($file->filename),
         format_size($file->filesize),
-        /* l(t('Download'), 'system/files/'. str_replace(file_create_path() .'/', '', $file->filepath)),
-         */
         /* -- nk. file_create_path without any param implies the ./files dir.
          l(t('Download'), 'system/files/' . str_replace(file_create_path() .'/', '', $file->filepath)),
-         */
-        l(t('Download'), 'system/files/' . str_replace('files' . '/', '', $file->filepath)),
+
+	 REVISIT: path changed from ./file to 'zohocrm_export_directory' varialbe 
+        */
+        l(t('Download'), 'system/files/' . str_replace(variable_get('zohocrm_export_directory', 'zohocrm_export') . '/', '', $file->filepath)),
       );
       $rows[] = $row;
     }

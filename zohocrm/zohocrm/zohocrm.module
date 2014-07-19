@@ -168,23 +168,18 @@ function zohocrm_mapping_fields_load($name) {
   $mapping = zohocrm_mapping_load($name);
 
   $fields =  array();
-  $result = db_query("SELECT * FROM {zohocrm_mapping_fields} WHERE mapping_name = :name", array(':name' => $name))
-             ->execute()
-             ->fetchAssoc();
+  $result = db_select('zohocrm_mapping', 'm')
+    ->fields('m')
+    ->condition('mapping_name',$name,'=')
+    ->execute()
+    ->fetchAssoc();
 
-
-  /* -- nk while ($row = db_fetch_array($results)) {
-  foreach ($result as $row) {
-    $fields[$row['dst']] = $row;
-  }
-  if (!empty($fields)) {
-    $mapping['fields'] = $fields;
+  foreach ($result as $k => $v)  {
+    $mappings[$k] = $v;
   }
 
-  return $mapping;
-   */
+  return $mappings;
 
-  return $result;
 }
 
 /**

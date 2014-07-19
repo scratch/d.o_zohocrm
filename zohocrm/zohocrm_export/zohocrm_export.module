@@ -98,21 +98,27 @@ function zohocrm_export_cron() {
 function zohocrm_file_download($filepath) {
   global $user;
 
-  if (strpos($filepath, variable_get('zohocrm_export_directory', 'zohocrm_export') . '/') === 0) {
+  $path =  variable_get('zohocrm_export_directory', 'zohocrm_export');
+  if (strpos($filepath, $path . '/') === 0) {
     $retval = file_prepare_directory($filepath, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
-    /* $result = db_query("SELECT * FROM {files} WHERE filepath = '%s'", $filepath);
+    /* $result = db_query("SELECT * FROM {files} WHERE filepath = '%s'", file_create_path($filepath));
      */
-    $result = db_query("SELECT * FROM {files} WHERE filepath = '%s'", file_create_path($filepath));
-    $file = db_fetch_object($result);
+    $retval  = file_prepare_directory ($filepath, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+    if (!$retval) {
+	return -1;
+    } else {
+	$result = db_query("SELECT * FROM {files} WHERE filepath = '%s'", $filepath);
+	$file = db_fetch_object($result);
 
-    if (is_object($file) && user_access('export data to zohocrm') && $file->uid == $user->uid) {
-      return array(
-        'Content-Type: ' . $file->filemime,
-        'Content-Length: ' . $file->filesize,
-      );
-    }
-    else {
-      return -1;
+	if (is_object($file) && user_access('export data to zohocrm') && $file->uid == $user->uid) {
+	  return array(
+	    'Content-Type: ' . $file->filemime,
+	    'Content-Length: ' . $file->filesize,
+	  );
+	}
+	else {
+	  return -1;
+	}
     }
   }
 }
