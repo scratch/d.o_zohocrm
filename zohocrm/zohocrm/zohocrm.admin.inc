@@ -578,6 +578,8 @@ function zohocrm_mapping_add_form_submit($form, &$form_state) {
   db_query("INSERT INTO {zohocrm_mapping} (`mapping_name`, `description`, `drupal_endpoint`, `zoho_module`, `status`) VALUES ('%s', '%s', '%s', '%s', 1)", $args);
    */
 
+  /* TODO: Catch DB insert errors (Row already present throws exception) 
+   */
    $result = db_insert ('zohocrm_mapping')
     ->fields(array(
       'mapping_name' =>     $form_state['values']['mapping_name'],
