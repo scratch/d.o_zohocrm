@@ -5,9 +5,22 @@
  * Defines rules' events, actions and conditions.
  */
 
+function zohocrm_webhooks_rules_event_info() {
+  return array(
+    'zohocrm_webhooks_webhook' => array(
+      'label' => t('Webhooks: Zoho CRM Webhook has been triggered'),
+      'group' => 'Zoho',
+      'variables' => array(
+        'webhook_name' => array('type' => 'webhook', 'label' => t('Webhook name')),
+        'post_data' => array('type' => 'zohocrm_data', 'label' => t('POST data')),
+      ),
+    ),
+  );
+}
+
+
 /**
  * Implements hook_rules_event_info().
- */
 function zohocrm_webhooks_rules_event_info() {
   return array(
     'zohocrm_webhooks_webhook' => array(
@@ -20,10 +33,24 @@ function zohocrm_webhooks_rules_event_info() {
     ),
   );
 }
+ */
+
+function zohocrm_webhooks_rules_condition_info() {
+  return array(
+    'zohocrm_webhooks_rules_condition_webhook_name' => array(
+      'label' => t('Webhooks: Zoho CRM Webhook name'),
+      'group' => 'Zoho',
+      'parameter' => array(
+        'webhook_name' => array('type' => 'webhook', 'label' => t('Zoho CRM Webhook')),
+      ),
+      'help' => t('Evaluates to TRUE, if webhook name matches the given string.'),
+    ),
+  );
+}
+
 
 /**
  * Implements hook_rules_condition_info().
- */
 function zohocrm_webhooks_rules_condition_info() {
   return array(
     'zohocrm_webhooks_rules_condition_webhook_name' => array(
@@ -36,6 +63,8 @@ function zohocrm_webhooks_rules_condition_info() {
     ),
   );
 }
+ */
+
 
 function zohocrm_webhooks_rules_condition_webhook_name($webhook_name, $settings) {
   return $webhook_name == $settings['name'];
