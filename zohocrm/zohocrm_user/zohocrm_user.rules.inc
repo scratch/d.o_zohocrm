@@ -11,28 +11,31 @@
 function zohocrm_user_rules_action_info() {
   $info = array();
 
-  $info['zohocrm_rules_action_send_user_data'] = array(
-    'label' => t('Send user account data to Zoho'),
-    'arguments' => array(
+  $info['user_action_send_user_data'] = array(
+    'label' => t('Zuser: Send user account data to Zoho'),
+    'parameter' => array(
       'user' => array(
         'type' => 'user',
         'label' => t('User'),
       ),
     ),
-    'help' => t('Help text.'),
     'module' => 'Zoho CRM',
+    'group' => 'Zoho',
+     'base' => '',
+    'access callback' => 'zohocrm_rules_action_send_user_data',
   );
 
-  $info['zohocrm_user_rules_action_delete_zoho_record'] = array(
-    'label' => t('Delete Zoho CRM record'),
-    'arguments' => array(
+  $info['user_action_delete_zoho_record'] = array(
+    'label' => t('Zuser: Delete Zoho CRM record'),
+    'parameter' => array(
       'node' => array(
         'type' => 'user',
         'label' => t('User'),
       ),
     ),
-    'help' => t(''),
-    'module' => 'Zoho CRM',
+    'group' => 'Zoho',
+     'base' => '',
+    'access callback' => 'zohocrm_user_rules_action_delete_zoho_record',
   );
 
   return $info;

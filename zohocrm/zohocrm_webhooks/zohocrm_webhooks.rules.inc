@@ -51,9 +51,39 @@ function zohocrm_webhooks_rules_condition_webhook_name_form($settings, &$form, &
   );
 }
 
+function zohocrm_webhooks_rules_action_info() {
+  $actions = array();
+
+  $defaults = array (
+    'parameter' => array(
+	'post_data' => array(
+	  'type' => 'zohocrm_data',
+	  'label' => t('Zoho CRM data'),
+	  'description' => t('Zweb: zoho data.'),
+	  'save' => TRUE,
+	),
+      ),
+      'group' => t('Zoho'),
+      'base' => '',
+  );
+
+  $actions['webhooks_action_save_zoho_data'] = $defaults + array(
+    'label' => t('Webhooks: Save Zoho data to Drupal'),
+    'base' => '',
+    'access callback' => 'zohocrm_webhooks_rules_action_save_zoho_data',
+  );
+
+  $actions['webhooks_action_delete_zoho_data'] = $defaults + array (
+    'label' => t('Webhooks: Delete Drupal Object'),
+    'base' => '',
+    'access callback' => 'zohocrm_webhooks_rules_action_delete_drupal_object',
+  ); 
+
+  return $actions;
+}
+
 /**
  * Implements hook_rules_action_info().
- */
 function zohocrm_webhooks_rules_action_info() {
   $info = array();
   $info['zohocrm_webhooks_rules_action_save_zoho_data'] = array(
@@ -82,6 +112,7 @@ function zohocrm_webhooks_rules_action_info() {
 
   return $info;
 }
+ */
 
 function zohocrm_webhooks_rules_action_save_zoho_data($zoho_data, $settings) {
   zohocrm_save_zoho_data($zoho_data, $settings);
