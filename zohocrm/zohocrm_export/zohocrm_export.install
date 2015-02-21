@@ -57,16 +57,17 @@ function zohocrm_export_requirements($phase) {
         if (!file_exists($dir .'/.htaccess')) {
           _zohocrm_export_create_htaccess();
         }
-        */
+      */
 
       $path = variable_get('zohocrm_export_directory', 'zohocrm_export');
+      $dir = $path;  // -- nk. Need to append dir here for security?
       $retval = file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
       if ($retval)  {
         if (!file_exists($path . '/.htaccess')) {
             _zohocrm_export_create_htaccess();
         }
 
-        $path = $dir .'/test.txt';
+        $path = $dir . '/test.txt';
         file_save_data('Testing', $path);
         $url = url($path, array('absolute' => TRUE));
         /* -- nk. $response = drupal_http_request($url, array(), 'HEAD');
@@ -90,6 +91,13 @@ function zohocrm_export_requirements($phase) {
 }
 
 function _zohocrm_export_create_htaccess() {
+  /* -- nk. REVISIT: Since file_prepare_directory() already called in the caller 
+     function(s), not required? 
+  $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export'));
+  */
+
+  $path = variable_get('zohocrm_export_directory', 'zohocrm_export');
+  $retval = file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
 
   $content = <<<CONTENT
 # Protect exported CSV files from unauthorized downloads
@@ -98,9 +106,7 @@ Deny from all
 
 CONTENT;
 
-  /* -- nk. REVISIT: Since file_prepare_directory() already called in the caller 
-     function(s), not required? 
-  $path = file_create_path(variable_get('zohocrm_export_directory', 'zohocrm_export'));
-  */
-  file_save_data($content, $path .'/.htaccess');
+
+file_save_data($content, '$path/.htaccess');
+  file_create_htaccess($path);
 }
