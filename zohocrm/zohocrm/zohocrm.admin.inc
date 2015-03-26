@@ -135,7 +135,7 @@ function zohocrm_mapping_list() {
 
 /* function zohocrm_mapping_edit_form(&$form_state, $mapping) {
  */
-function zohocrm_mapping_edit_form(&$form_state, $mapping) {
+function zohocrm_mapping_edit_form($form_state, $mapping) {
 
   $form = array(
     '#redirect' => 'admin/settings/zohocrm/mapping',
@@ -242,7 +242,7 @@ function zohocrm_mapping_enable_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/zohocrm/mapping';
 }
 
-function zohocrm_mapping_fields_form(&$form_state, $mapping) {
+function zohocrm_mapping_fields_form($form_state, $mapping) {
 
   $form = array(
     '#tree' => TRUE,
@@ -250,19 +250,26 @@ function zohocrm_mapping_fields_form(&$form_state, $mapping) {
   );
 
   $endpoints = zohocrm_endpoint_info();
+  zohocrm_log($endpoints, "zohocrm_mapping_fields_form: endpoints");
+  zohocrm_log($mapping['build_info'], "zohocrm_mapping_fields_form: mappings");
+
+  $mapping_idx = $mapping['build_info']['args'][0];
+
 
   $args = array(
-    '@label' => $endpoints[$mapping['drupal_endpoint']]['label'],
-    '@module' => $mapping['zoho_module'],
+    // '@label' => $endpoints[$mapping['drupal_endpoint']]['label'],
+    // '@label' => $endpoints[$mapping['drupal_endpoint']]['label'],
+    '@label' => $endpoints[$mapping_idx['drupal_endpoint']]['label'],
+    '@module' => $mapping_idx['zoho_module'],
   );
   $title = t('@label to Zoho @module', $args);
-  $description = check_plain($mapping['description']);
+  $description = check_plain($mapping_idx['description']);
   $form['description'] = array(
     '#type' => 'markup',
     '#value' => '<h2>' . $title . '</h2><p>' . $description . '</p>',  /* TODO: -- nk. use check_plain() or fileter_xss to sanitise title, descr */
   );
 
-  $defaults = $mapping['fields'];
+  $defaults = $mapping_idx['fields'];
   $default_option = array('' => '<' . t('none') . '>');
 
   // Drupal to Zoho

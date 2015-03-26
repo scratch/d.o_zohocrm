@@ -201,6 +201,7 @@ function zohocrm_permission() {
 function zohocrm_invoke_all() {
   $args = func_get_args();
   $hook = $args[0];
+  zohocrm_log($args, "zohocrm_invoke_all");
   unset($args[0]);
   $return = array();
   foreach (module_implements($hook) as $module) {

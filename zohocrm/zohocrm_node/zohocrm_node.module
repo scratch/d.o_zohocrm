@@ -22,7 +22,7 @@ function zohocrm_node_zohocrm_endpoint_info() {
     $info[$name] = array(
       'type' => $name,
       'label' => t('Content Type:') .' '. $type->name,
-      'description' => $type->description,
+      'description' => $type->description,     // Bug: description not getting picked.
       'module' => 'zohocrm_node',
       'key' => 'nid',
       'table' => 'node',

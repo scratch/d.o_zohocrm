@@ -15,10 +15,10 @@ function zohocrm_user_rules_action_info() {
     'parameter' => array (
       'user' => array(
         'type' => 'user',
-        'label' => t('User'),
+        'label' => t('ZUser'),
       ),
     ),
-    'module' => 'zohocrm',
+    // 'module' => 'zohocrm',
     'group' => 'Zoho',
     'base' => '',
   );
@@ -37,11 +37,11 @@ function zohocrm_user_rules_action_info() {
   return $info;
 }
 
-function _zohocrm_rules_action_send_user_data($user, $settings) {
+function zohocrm_rules_action_send_user_data($user, $settings) {
   zohocrm_send_data($user, $settings);
 }
 
-function _zohocrm_rules_action_send_user_data_form($settings, &$form) {
+function zohocrm_rules_action_send_user_data_form($settings, &$form) {
   zohocrm_rules_action_form($settings, $form);
 }
 

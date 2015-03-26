@@ -78,7 +78,7 @@ function zohocrm_rules_action_send_node_data_form($settings, &$form) {
   zohocrm_rules_action_form($settings, $form);
 }
 
-function _zohocrm_node_rules_action_delete_zoho_record($node, $settings) {
+function zohocrm_node_rules_action_delete_zoho_record($node, $settings) {
   zohocrm_action_delete_zoho_record($node, $settings);
 }
 

@@ -143,7 +143,7 @@ function zohocrm_webhooks_rules_action_info() {
 }
  */
 
-function _zohocrm_webhooks_rules_action_save_zoho_data($zoho_data, $settings) {
+function zohocrm_webhooks_rules_action_save_zoho_data($zoho_data, $settings) {
   zohocrm_save_zoho_data($zoho_data, $settings);
 }
 
@@ -151,7 +151,7 @@ function zohocrm_webhooks_rules_action_save_zoho_data_form($settings, &$form) {
   zohocrm_rules_action_form($settings, $form);
 }
 
-function _zohocrm_webhooks_rules_action_delete_drupal_object($zoho_data, $settings) {
+function zohocrm_webhooks_rules_action_delete_drupal_object($zoho_data, $settings) {
   zohocrm_log($zoho_data, 'ZOHO WEBHOOK DATA');
   zohocrm_is_receiving_zoho_data(TRUE);
   $mapping = zohocrm_mapping_fields_load($settings['mapping']);
