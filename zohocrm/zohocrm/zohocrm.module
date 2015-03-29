@@ -161,23 +161,27 @@ function zohocrm_mapping_load($name) {
     $mappings[$k] = $v;
   }
 
+  zohocrm_log($mappings, "zohocrm_mapping_load");
   return $mappings;
 }
 
 function zohocrm_mapping_fields_load($name) {
-  $mapping = zohocrm_mapping_load($name);
+  $mappings = zohocrm_mapping_load($name);
 
   $fields =  array();
-  $result = db_select('zohocrm_mapping', 'm')
-    ->fields('m')
+  $result = db_select('zohocrm_mapping_fields', 'f')
+    ->fields('f')
     ->condition('mapping_name',$name,'=')
     ->execute()
     ->fetchAssoc();
 
-  foreach ($result as $k => $v)  {
-    $mappings[$k] = $v;
+  if (!empty ($result))  {
+    foreach ($result as $k => $v)  {
+      $mappings[$k] = $v;
+    }
   }
 
+  zohocrm_log($mappings, "zohocrm_mapping_fields_load");
   return $mappings;
 
 }
@@ -201,7 +205,7 @@ function zohocrm_permission() {
 function zohocrm_invoke_all() {
   $args = func_get_args();
   $hook = $args[0];
-  zohocrm_log($args, "zohocrm_invoke_all");
+  // zohocrm_log($args, "zohocrm_invoke_all");
   unset($args[0]);
   $return = array();
   foreach (module_implements($hook) as $module) {
@@ -369,6 +373,7 @@ function zohocrm_get_mappings($active = TRUE) {
   }
 
 
+  zohocrm_log($mappings, "zohocrm_get_mappings:");
   return $mappings;
 }
 

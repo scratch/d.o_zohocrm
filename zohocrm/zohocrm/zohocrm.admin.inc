@@ -251,7 +251,7 @@ function zohocrm_mapping_fields_form($form_state, $mapping) {
 
   $endpoints = zohocrm_endpoint_info();
   zohocrm_log($endpoints, "zohocrm_mapping_fields_form: endpoints");
-  zohocrm_log($mapping['build_info'], "zohocrm_mapping_fields_form: mappings");
+  zohocrm_log($mapping, "zohocrm_mapping_fields_form: mappings");
 
   $mapping_idx = $mapping['build_info']['args'][0];
 
@@ -282,8 +282,8 @@ function zohocrm_mapping_fields_form($form_state, $mapping) {
     '#theme' => 'zohocrm_mapping_fields_table_dtz',
   );
 
-  $drupal_options = zohocrm_drupal_select_options($mapping['drupal_endpoint']);
-  $zoho_fields = zohocrm_get_zoho_fields_info($mapping['zoho_module']);
+  $drupal_options = zohocrm_drupal_select_options($mapping_idx['drupal_endpoint']);
+  $zoho_fields = zohocrm_get_zoho_fields_info($mapping_idx['zoho_module']);
 
   $i = 0;
   foreach ($zoho_fields as $section_name => $section_fields) {
@@ -367,8 +367,8 @@ function zohocrm_mapping_fields_form($form_state, $mapping) {
       '#theme' => 'zohocrm_mapping_fields_table_ztd',
     );
 
-    $zoho_options = zohocrm_zoho_select_options($mapping['zoho_module']);
-    $drupal_fields = zohocrm_drupal_fields($mapping['drupal_endpoint']);
+    $zoho_options = zohocrm_zoho_select_options($mapping_idx['zoho_module']);
+    $drupal_fields = zohocrm_drupal_fields($mapping_idx['drupal_endpoint']);
 
     $i = 0;
     foreach ($drupal_fields as $section_name => $section_fields) {
@@ -426,7 +426,7 @@ function zohocrm_mapping_fields_form($form_state, $mapping) {
       '#collapsed' => TRUE,
     );
 
-    $xmldata = zohocrm_webhooks_xmldata($mapping['zoho_module']);
+    $xmldata = zohocrm_webhooks_xmldata($mapping_idx['zoho_module']);
     $form['webhooks_help']['xmldata'] = array(
       '#type' => 'markup',
       '#value' => check_plain($xmldata),
@@ -437,17 +437,17 @@ function zohocrm_mapping_fields_form($form_state, $mapping) {
 
   $form['mapping_name'] = array(
     '#type' => 'value',
-    '#value' => $mapping['mapping_name'],
+    '#value' => $mapping_idx['mapping_name'],
   );
 
   $form['drupal_endpoint'] = array(
     '#type' => 'value',
-    '#value' => $mapping['drupal_endpoint'],
+    '#value' => $mapping_idx['drupal_endpoint'],
   );
 
   $form['zoho_module'] = array(
     '#type' => 'value',
-    '#value' => $mapping['zoho_module'],
+    '#value' => $mapping_idx['zoho_module'],
   );
 
   $form['submit'] = array(
