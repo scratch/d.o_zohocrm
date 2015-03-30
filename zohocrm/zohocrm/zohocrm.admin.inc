@@ -469,21 +469,21 @@ function zohocrm_mapping_fields_form_submit($form, &$form_state) {
   }
 }
 
-function theme_zohocrm_mapping_fields_table_dtz($form, &form_state) {
+function theme_zohocrm_mapping_fields_table_dtz($form) {
   $rows = zohocrm_mapping_fields_rows($form);
   $header = array(t('Zoho Field'), t('Drupal Field'), t('Default Value'));
 
   return theme('table', $header, $rows, array('id' => 'mapping-fields-dtz'));
 }
 
-function theme_zohocrm_mapping_fields_table_ztd($form, &form_state) {
+function theme_zohocrm_mapping_fields_table_ztd($form) {
   $rows = zohocrm_mapping_fields_rows($form);
   $header = array(t('Drupal Field'), t('Zoho Field'), t('Default Value'));
 
   return theme('table', $header, $rows, array('id' => 'mapping-fields-ztd'));
 }
 
-function zohocrm_mapping_fields_rows($form, &form_state) {
+function zohocrm_mapping_fields_rows($form) {
   $rows = array();
   foreach (element_children($form['fields']) as $key) {
     $field = &$form['fields'][$key];
