@@ -94,7 +94,7 @@ function zohocrm_menu() {
     'type' => MENU_CALLBACK,
     'title' => 'Edit Mapping Fields',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('zohocrm_mapping_fields_form', 4),
+    'page arguments' => array('zohocrm_mapping_fields_form', 4),  /* Study */
     'access arguments' => array('administer zohocrm'),
     'file' => 'zohocrm.admin.inc',
   );
@@ -161,9 +161,11 @@ function zohocrm_mapping_load($name) {
     $mappings[$k] = $v;
   }
 
+/* TODO:  Check what we get here */
   return $mappings;
 }
 
+// -- nk. See #94
 function zohocrm_mapping_fields_load($name) {
   $mapping = zohocrm_mapping_load($name);
 
@@ -178,6 +180,7 @@ function zohocrm_mapping_fields_load($name) {
     $mappings[$k] = $v;
   }
 
+/* TODO:  Check with D6 */
   return $mappings;
 
 }
@@ -368,7 +371,7 @@ function zohocrm_get_mappings($active = TRUE) {
     $mappings[$v['mapping_name']] = $v;
   }
 
-
+/* TODO: Check return value with D6 */
   return $mappings;
 }
 
