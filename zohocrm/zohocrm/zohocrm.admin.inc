@@ -135,7 +135,7 @@ function zohocrm_mapping_list() {
 
 /* function zohocrm_mapping_edit_form(&$form_state, $mapping) {
  */
-function zohocrm_mapping_edit_form($form_state, $mapping) {
+function zohocrm_mapping_edit_form($form, &$form_state, $mapping) {
 
   $form = array(
     '#redirect' => 'admin/settings/zohocrm/mapping',
@@ -179,7 +179,7 @@ function zohocrm_mapping_edit_form_submit($form, &$form_state) {
   db_query("UPDATE {zohocrm_mapping} SET description = '%s' WHERE mapping_name = '%s'", $args);
 }
 
-function zohocrm_mapping_delete_form(&$form_state, $mapping) {
+function zohocrm_mapping_delete_form($form, &$form_state, $mapping) {
   $form['mapping_name'] = array(
     '#type' => 'value',
     '#value' => $mapping['mapping_name'],
@@ -200,7 +200,7 @@ function zohocrm_mapping_delete_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/zohocrm/mapping';
 }
 
-function zohocrm_mapping_disable_form(&$form_state, $mapping) {
+function zohocrm_mapping_disable_form($form, &$form_state, $mapping) {
   $form['mapping_name'] = array(
     '#type' => 'value',
     '#value' => $mapping['mapping_name'],
@@ -221,7 +221,7 @@ function zohocrm_mapping_disable_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/zohocrm/mapping';
 }
 
-function zohocrm_mapping_enable_form(&$form_state, $mapping) {
+function zohocrm_mapping_enable_form($form, &$form_state, $mapping) {
   $form['mapping_name'] = array(
     '#type' => 'value',
     '#value' => $mapping['mapping_name'],
@@ -242,7 +242,7 @@ function zohocrm_mapping_enable_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/zohocrm/mapping';
 }
 
-function zohocrm_mapping_fields_form($form_state, $mapping) {
+function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
 
   $form = array(
     '#tree' => TRUE,
@@ -469,21 +469,21 @@ function zohocrm_mapping_fields_form_submit($form, &$form_state) {
   }
 }
 
-function theme_zohocrm_mapping_fields_table_dtz($form) {
+function theme_zohocrm_mapping_fields_table_dtz($form, &form_state) {
   $rows = zohocrm_mapping_fields_rows($form);
   $header = array(t('Zoho Field'), t('Drupal Field'), t('Default Value'));
 
   return theme('table', $header, $rows, array('id' => 'mapping-fields-dtz'));
 }
 
-function theme_zohocrm_mapping_fields_table_ztd($form) {
+function theme_zohocrm_mapping_fields_table_ztd($form, &form_state) {
   $rows = zohocrm_mapping_fields_rows($form);
   $header = array(t('Drupal Field'), t('Zoho Field'), t('Default Value'));
 
   return theme('table', $header, $rows, array('id' => 'mapping-fields-ztd'));
 }
 
-function zohocrm_mapping_fields_rows($form) {
+function zohocrm_mapping_fields_rows($form, &form_state) {
   $rows = array();
   foreach (element_children($form['fields']) as $key) {
     $field = &$form['fields'][$key];
