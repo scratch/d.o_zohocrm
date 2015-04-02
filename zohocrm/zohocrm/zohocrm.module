@@ -168,7 +168,7 @@ function zohocrm_mapping_load($name) {
 
 // -- nk. See #94
 function zohocrm_mapping_fields_load($name) {
-  $mappings = zohocrm_mapping_load($name);
+  $mapping = zohocrm_mapping_load($name);
 
   $fields =  array();
   $result = db_select('zohocrm_mapping_fields', 'f')
@@ -179,13 +179,17 @@ function zohocrm_mapping_fields_load($name) {
 
   if (!empty ($result))  {
     foreach ($result as $k => $v)  {
-      $mappings[$k] = $v;
+      $fields[$k] = $v;
     }
+  }
+
+  if (empty($fields)) {
+      $mapping['fields'] = $fields;
   }
 
 /* TODO:  Check with D6 */
   zohocrm_log($mappings, "zohocrm_mapping_fields_load");
-  return $mappings;
+  return $mapping;
 
 }
 
@@ -900,6 +904,7 @@ function zohocrm_mapping_field_save($mapping_name, $record) {
 
   }
 }
+
 
 function zohocrm_find_matching_drupal_object($zoho_data, $mapping, $endpoint) {
   // @todo: add an UI option to the mapping to toggle on/off this functionality
