@@ -176,7 +176,17 @@ function zohocrm_mapping_edit_form_submit($form, &$form_state) {
     $form_state['values']['description'],
     $form_state['values']['mapping_name'],
   );
-  db_query("UPDATE {zohocrm_mapping} SET description = '%s' WHERE mapping_name = '%s'", $args);
+
+  // zohocrm_log ($args, "zohocrm_mapping_edit_form_submit");
+  // db_query("UPDATE {zohocrm_mapping} SET description = '%s' WHERE mapping_name = '%s'", $args);
+
+  db_update('zohocrm_mapping')
+    ->fields(array (
+      'description' => $args[0],
+      'mapping_name' => $args[1],
+    ))
+    ->condition ('mapping_name',$args[1])
+    -> execute();
 }
 
 function zohocrm_mapping_delete_form($form, &$form_state, $mapping) {
