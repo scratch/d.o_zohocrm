@@ -161,8 +161,6 @@ function zohocrm_mapping_load($name) {
     $mappings[$k] = $v;
   }
 
-/* TODO:  Check what we get here */
-  zohocrm_log($mappings, "zohocrm_mapping_load");
   return $mappings;
 }
 
@@ -183,12 +181,8 @@ function zohocrm_mapping_fields_load($name) {
     }
   }
 
-  if (empty($fields)) {
-      $mapping['fields'] = $fields;
-  }
+  $mapping['fields'] = $fields;
 
-/* TODO:  Check with D6 */
-  zohocrm_log($mappings, "zohocrm_mapping_fields_load");
   return $mapping;
 
 }
@@ -212,7 +206,6 @@ function zohocrm_permission() {
 function zohocrm_invoke_all() {
   $args = func_get_args();
   $hook = $args[0];
-  // zohocrm_log($args, "zohocrm_invoke_all");
   unset($args[0]);
   $return = array();
   foreach (module_implements($hook) as $module) {
@@ -375,12 +368,11 @@ function zohocrm_get_mappings($active = TRUE) {
     ->fetchAll();
 
   $mappings = array();
-  foreach ($result as $v)  {
-    $mappings[$v['mapping_name']] = $v;
+  foreach ($result as $row)  {
+    $mappings[$row['mapping_name']] = $row;
   }
 
-/* TODO: Check return value with D6 */
-  zohocrm_log($mappings, "zohocrm_get_mappings:");
+  // zohocrm_log($mappings, "zohocrm_get_mappings:");
   return $mappings;
 }
 
@@ -861,9 +853,21 @@ function zohocrm_zoho_module_prefix($module) {
  * Deletes mapping.
  */
 function zohocrm_mapping_delete($mapping_name) {
-  db_query("DELETE FROM {zohocrm_mapping} WHERE mapping_name = '%s'", $mapping_name);
-  db_query("DELETE FROM {zohocrm_mapping_fields} WHERE mapping_name = '%s'", $mapping_name);
 
+  db_delete ('zohocrm_mapping')
+    ->condition ('mapping_name',$mapping_name) 
+    -> execute();
+
+  db_delete ('zohocrm_mapping_fields')
+    ->condition ('mapping_name',$mapping_name) 
+    -> execute();
+
+  /* TODO:
+  db_query("DELETE FROM {zohocrm_mapping} WHERE mapping_name = '%s'", 
+      array ('mapping_name' => $mapping_name) );
+  db_query("DELETE FROM {zohocrm_mapping_fields} WHERE mapping_name = '%s'", 
+      array ('mapping_name' => $mapping_name) );
+ */
   drupal_set_message(t('Mapping @mapping has been deleted', array('@mapping' => $mapping_name)));
 }
 
