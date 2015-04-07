@@ -209,6 +209,7 @@ function zohocrm_invoke_all() {
   unset($args[0]);
   $return = array();
   foreach (module_implements($hook) as $module) {
+    zohocrm_log ($module, "zohocrm_invoke_all");
     $function = $module . '_' . $hook;
     $result = call_user_func_array($function, $args);
     if (isset($result) && is_array($result)) {
@@ -228,6 +229,7 @@ function zohocrm_invoke_all() {
  */
 function zohocrm_endpoint_info($endpoint = NULL) {
   $return = zohocrm_invoke_all('zohocrm_endpoint_info');
+  zohocrm_log ($return, "zohocrm_endpoint_info");
 
   if (!empty($endpoint)) {
     $return = $return[$endpoint];
@@ -269,6 +271,10 @@ function zohocrm_query_build(&$endpoint) {
   $args = array();
   $where = '';
 
+  $query = db_select ($table, 'tbl')
+     ->fields ('tbl', array ($key));
+
+  
   if (!empty($endpoint['where']) && is_array($endpoint['where'])) {
     $conditions = array();
     foreach ($endpoint['where'] as $column => $value) {
@@ -287,18 +293,43 @@ function zohocrm_query_build(&$endpoint) {
       $conditions[] = $column . ' = ' . $placeholder;
       $args[] = $value;
     }
+
     $where = ' WHERE ' . implode(' AND ', $conditions);
+
+    $query->condition('tbl'.$column, $value,'=');
+
   }
+
+  if (empty($where))
+    $query = $query->condition(z.zoho_id,"NULL",'=');  // REVISIT: ISNULL(z.zoho_id)
+
+  $query = $query->orderBy("tbl.$key");
 
   // All drupal records
   $endpoint['query_sql']['all'] = "SELECT d.$key FROM {" . $table . "} d" . $where . " ORDER BY d.$key";
+
+  $endpoint['query_sql']['all'] = $query;
+
   // Only Drupal records that are already mapped to zoho record
   $endpoint['query_sql']['mapped'] = "SELECT d.$key FROM {" . $table . "} d INNER JOIN {zohocrm_record_mapping} z ON d.$key = z.drupal_id" . $where . " ORDER BY d.$key";
+
+  $query_mapped = $query;
+  $query_mapped->innerJoin('zohocrm_record_mapping', 'z', "tbl.$key=z.drupal_id");
+
+$endpoint['query_sql']['mapped'] = $query_mapped;
+
   // Only Drupal records that are not yet mapped to zoho record
   $where = empty($where) ? " WHERE ISNULL(z.zoho_id)" : "$where AND ISNULL(z.zoho_id)";
   $endpoint['query_sql']['notmapped'] = "SELECT d.$key FROM {" . $table . "} d LEFT JOIN {zohocrm_record_mapping} z ON d.$key = z.drupal_id" . $where . " ORDER BY d.$key";
+
+  $query_notmapped = $query;
+  $query_notmapped->leftJoin('zohocrm_record_mapping', 'z', "tbl.$key=z.drupal_id");
+$endpoint['query_sql']['notmapped'] = $query_notmapped;
+
   $endpoint['query_args'] = $args;
 }
+
+
 
 function zohocrm_get_client() {
   $disabled = variable_get('zohocrm_client_disabled', 0);
@@ -694,6 +725,7 @@ function zohocrm_delete_zoho_record($id, $module) {
  *    array of Zoho fields
  */
 function zohocrm_get_zoho_fields_info($module, $remove_sections = FALSE) {
+  zohocrm_log ($module, "zohocrm_get_zoho_fields_info");
   if ($fields_info = cache_get('zohocrm:fields_info:' . $module)) {
     $records = $fields_info->data;
   }
@@ -703,6 +735,7 @@ function zohocrm_get_zoho_fields_info($module, $remove_sections = FALSE) {
       return array();
     }
     $zoho->setModule($module);
+    zohocrm_log ($zoho, "zohocrm_get_zoho_fields_info");
 
     try {
       $response = $zoho->getFields();

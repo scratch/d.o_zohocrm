@@ -263,10 +263,6 @@ function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
   zohocrm_log($endpoints, "zohocrm_mapping_fields_form: endpoints");
   zohocrm_log($mapping, "zohocrm_mapping_fields_form: mappings");
 
-  // $mapping_idx = $mapping['build_info']['args'][0];
-  // $mapping_idx = $mapping;
-
-
   $args = array(
     // '@label' => $endpoints[$mapping['drupal_endpoint']]['label'],
     // '@label' => $endpoints[$mapping['drupal_endpoint']]['label'],

@@ -44,6 +44,8 @@ function zohocrm_node_zohocrm_endpoint_info() {
  */
 function zohocrm_node_zohocrm_endpoint_fields_info($endpoint) {
 
+  zohocrm_log ($endpoint, "zohocrm_node_zohocrm_endpoint_fields_info");
+
   if (strpos($endpoint, ZOHOCRM_ENDPOINT_NODE .'__') === 0) {
     $type = str_replace(ZOHOCRM_ENDPOINT_NODE .'__', '', $endpoint);
 
