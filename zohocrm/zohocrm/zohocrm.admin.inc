@@ -260,8 +260,10 @@ function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
   );
 
   $endpoints = zohocrm_endpoint_info();
-  zohocrm_log($endpoints, "zohocrm_mapping_fields_form: endpoints");
-  zohocrm_log($mapping, "zohocrm_mapping_fields_form: mappings");
+  // zohocrm_log($endpoints, "zohocrm_mapping_fields_form:--endpoints");
+  // zohocrm_log($mapping, "zohocrm_mapping_fields_form:--mappings");
+  zohocrm_log($form, "zohocrm_mapping_fields_form: form");
+  zohocrm_log($form_state, "zohocrm_mapping_fields_form: form_state");
 
   $args = array(
     // '@label' => $endpoints[$mapping['drupal_endpoint']]['label'],
@@ -273,10 +275,10 @@ function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
   $description = check_plain($mapping['description']);
   $form['description'] = array(
     '#type' => 'markup',
-    '#value' => '<h2>' . $title . '</h2><p>' . $description . '</p>',  /* TODO: -- nk. use check_plain() or fileter_xss to sanitise title, descr */
+    '#value' => '<h2>' . $title . '</h2><p>' . $description . '</p>',
   );
 
-  $defaults = $mapping['fields'];
+  $defaults = (isset ($mapping['fields']) )  ?  $mapping['fields']  :  "";
   $default_option = array('' => '<' . t('none') . '>');
 
   // Drupal to Zoho
@@ -328,7 +330,7 @@ function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
       }
       $form['dtz']['fields'][$i]['default_value'] = array(
         '#type' => $type,
-        '#default_value' => check_plain($defaults[$label]['default_value']),
+        '#default_value' => (isset($defaults[$label]) )  ?  check_plain($defaults[$label]['default_value']) : "",
         '#maxlength' => $maxlength,
         '#size' => $size,
       );
@@ -340,7 +342,7 @@ function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
 
       $form['dtz']['fields'][$i]['src'] = array(
         '#type' => 'select',
-        '#default_value' => $defaults[$label]['src'],
+        '#default_value' => (isset($defaults[$label]['src']) )  ?  check_plain($defaults[$label]['src'])  : "",
         '#options' => $drupal_options,
       );
 
@@ -356,7 +358,7 @@ function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
 
       $form['dtz']['fields'][$i]['mfid'] = array(
         '#type' => 'value',
-        '#value' => $defaults[$label]['mfid'],
+        '#value' => (isset ($defaults[$label]['mfid'])  )  ?  check_plain($defaults[$label]['src'])  :  "",
       );
 
       $i++;
