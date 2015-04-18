@@ -209,7 +209,7 @@ function zohocrm_invoke_all() {
   unset($args[0]);
   $return = array();
   foreach (module_implements($hook) as $module) {
-    zohocrm_log ($module, "zohocrm_invoke_all");
+    // zohocrm_log ($module, "zohocrm_invoke_all");
     $function = $module . '_' . $hook;
     $result = call_user_func_array($function, $args);
     if (isset($result) && is_array($result)) {
@@ -229,7 +229,7 @@ function zohocrm_invoke_all() {
  */
 function zohocrm_endpoint_info($endpoint = NULL) {
   $return = zohocrm_invoke_all('zohocrm_endpoint_info');
-  zohocrm_log ($return, "zohocrm_endpoint_info");
+  // zohocrm_log ($return, "zohocrm_endpoint_info");
 
   if (!empty($endpoint)) {
     $return = $return[$endpoint];
@@ -334,6 +334,7 @@ $endpoint['query_sql']['notmapped'] = $query_notmapped;
 function zohocrm_get_client() {
   $disabled = variable_get('zohocrm_client_disabled', 0);
   if ($disabled) {
+    watchdog('zohocrm', 'zohocrm_client_disabled variable SET', array(), WATCHDOG_WARNING);
     return FALSE;
   }
 
@@ -350,6 +351,8 @@ function zohocrm_get_client() {
 
   return new ZohoCRM\Client($authtoken);
 }
+
+
 
 function zohocrm_get_zoho_modules() {
   return array(
@@ -725,17 +728,17 @@ function zohocrm_delete_zoho_record($id, $module) {
  *    array of Zoho fields
  */
 function zohocrm_get_zoho_fields_info($module, $remove_sections = FALSE) {
-  zohocrm_log ($module, "zohocrm_get_zoho_fields_info");
   if ($fields_info = cache_get('zohocrm:fields_info:' . $module)) {
     $records = $fields_info->data;
+    // zohocrm_log ($records, "zohocrm_get_zoho_fields_info: records from cache");
   }
   else {
     $zoho = zohocrm_get_client();
     if ($zoho === FALSE) {
+      watchdog('zohocrm', "Couldn't connect to client", array('@module' => $module, '@message' => $e->getMessage()), WATCHDOG_WARNING);
       return array();
     }
     $zoho->setModule($module);
-    zohocrm_log ($zoho, "zohocrm_get_zoho_fields_info");
 
     try {
       $response = $zoho->getFields();
@@ -746,6 +749,7 @@ function zohocrm_get_zoho_fields_info($module, $remove_sections = FALSE) {
       return array();
     }
     $records = $response->getRecords();
+    zohocrm_log ($records, "zohocrm_get_zoho_fields_info: record fetched");
 
     cache_set('zohocrm:fields_info:' . $module, $records, 'cache', /* time() */ REQUEST_TIME + 60*60*24); // -- nk. time with REQUEST_TIME
   }
