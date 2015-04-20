@@ -299,8 +299,11 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
   $description = check_plain($mapping['description']);
   $form['description'] = array(
     '#type' => 'markup',
-    '#value' => '<h2>' . $title . '</h2><p>' . $description . '</p>', 
+    '#value' => '<h2>' . $title . '</h2><p>' . $description . '</p>',
   );
+
+  $defaults = (isset ($mapping['fields']) )  ?  $mapping['fields']  :  "";
+  $default_option = array('' => '<' . t('none') . '>');
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -363,9 +366,7 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
 
       $form['dtz']['fields'][$i]['src'] = array(
         '#type' => 'select',
-	'#default_value' => isset ($defaults[$label]['src'])
-				?  check_plain($defaults[$label]['src'])
-				: "",
+        '#default_value' => (isset($defaults[$label]['src']) )  ?  check_plain($defaults[$label]['src'])  : "",
         '#options' => $drupal_options,
       );
 
@@ -381,9 +382,7 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
 
       $form['dtz']['fields'][$i]['mfid'] = array(
         '#type' => 'value',
-	'#value' => isset ($defaults[$label]['mfid'])
-				?  check_plain($defaults[$label]['mfid'])
-				: "",
+        '#value' => (isset ($defaults[$label]['mfid'])  )  ?  check_plain($defaults[$label]['src'])  :  "",
       );
 
       $i++;
