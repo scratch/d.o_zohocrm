@@ -507,7 +507,7 @@ function zohocrm_mapping_fields_form_submit($form, &$form_state) {
 
 // function theme_zohocrm_mapping_fields_table_dtz($form) {
 function theme_zohocrm_mapping_fields_table_dtz($vars) {
-  $form = $vars[''];
+  $form = $vars[''];  // vars[''] should have been vars['form']. BUG/REVISIT
   // zohocrm_log ($vars, "theme_zohocrm_mapping_fields_table_dtz: vars");
   $rows = zohocrm_mapping_fields_rows($form);
   // zohocrm_log ($rows, "theme_zohocrm_mapping_fields_table_dtz: rows");
@@ -539,7 +539,8 @@ function zohocrm_mapping_fields_rows($form) {
     //zohocrm_log($value, "zohocrm_mapping_fields_rows: field");
     $row = array();
     if (isset($field['section'])) {
-      $row[] = drupal_render($field['section']);
+      /* $row[] = render($field['section']['#value']); */
+      $row[] = array ('data' => render($field['section']['#value']), 'style' => 'font-weight: Bold');
     }
     else {
       if (isset($field['field_name']['#required']) && $field['field_name']['#required']) {
@@ -550,7 +551,7 @@ function zohocrm_mapping_fields_rows($form) {
         $required = $required_class = '';
       }
 
-      $row[] = array('data' => drupal_render($field['field_name']) . $required, 'class' => 'field-name' . $required_class);
+      $row[] = array('data' => render($field['field_name']['#value']) . $required, 'class' => 'field-name' . $required_class);
       $row[] = array('data' => drupal_render($field['src']), 'class' => 'source-field');
       $row[] = array('data' => drupal_render($field['default_value']) . drupal_render($field['dst']) . drupal_render($field['mfid']) . drupal_render($field['sync_direction']), 'class' => 'default-value');
 
