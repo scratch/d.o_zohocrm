@@ -135,7 +135,7 @@ function zohocrm_menu() {
 function zohocrm_theme() {
   return array(
     'zohocrm_mapping_fields_table_dtz' => array(
-      'arguments' => array('form' => NULL),
+      'arguments' => array('form' => NULL),  // REVISIT. This may be variables. And NULL may be wrong.
       'file' => 'zohocrm.admin.inc',
     ),
     'zohocrm_mapping_fields_table_ztd' => array(
@@ -184,8 +184,8 @@ function zohocrm_mapping_fields_load($name) {
   $mapping['fields'] = $fields;
 
   return $mapping;
-
 }
+
 
 /**
  * Implements hook_permission().
@@ -278,32 +278,15 @@ function zohocrm_query_build(&$endpoint) {
   if (!empty($endpoint['where']) && is_array($endpoint['where'])) {
     $conditions = array();
     foreach ($endpoint['where'] as $column => $value) {
-      if (is_int($value) || is_bool($value)) {
-        $placeholder = '%d';
-      }
-      elseif (is_float($value)) {
-        $placeholder = '%f';
-      }
-      elseif (is_string($value)) {
-        $placeholder = "'%s'";
-      }
-      else {
-        // @todo: handle error
-      }
-      $conditions[] = $column . ' = ' . $placeholder;
+      $query->condition('tbl'.$column, $value,'=');
       $args[] = $value;
     }
-
-    $where = ' WHERE ' . implode(' AND ', $conditions);
-
-    $query->condition('tbl'.$column, $value,'=');
-
   }
 
   if (empty($where))
-    $query = $query->condition(z.zoho_id,"NULL",'=');  // REVISIT: ISNULL(z.zoho_id)
+    $query = $query->condition('tbl'.'zoho_id',"NULL",'=');  // REVISIT: ISNULL(z.zoho_id)
 
-  $query = $query->orderBy("tbl.$key");
+  $query = $query->orderBy('tbl'.$key);
 
   // All drupal records
   $endpoint['query_sql']['all'] = "SELECT d.$key FROM {" . $table . "} d" . $where . " ORDER BY d.$key";
@@ -316,12 +299,9 @@ function zohocrm_query_build(&$endpoint) {
   $query_mapped = $query;
   $query_mapped->innerJoin('zohocrm_record_mapping', 'z', "tbl.$key=z.drupal_id");
 
-$endpoint['query_sql']['mapped'] = $query_mapped;
+  $endpoint['query_sql']['mapped'] = $query_mapped;
 
   // Only Drupal records that are not yet mapped to zoho record
-  $where = empty($where) ? " WHERE ISNULL(z.zoho_id)" : "$where AND ISNULL(z.zoho_id)";
-  $endpoint['query_sql']['notmapped'] = "SELECT d.$key FROM {" . $table . "} d LEFT JOIN {zohocrm_record_mapping} z ON d.$key = z.drupal_id" . $where . " ORDER BY d.$key";
-
   $query_notmapped = $query;
   $query_notmapped->leftJoin('zohocrm_record_mapping', 'z', "tbl.$key=z.drupal_id");
 $endpoint['query_sql']['notmapped'] = $query_notmapped;
@@ -765,6 +745,8 @@ function zohocrm_get_zoho_fields_info($module, $remove_sections = FALSE) {
     }
     $records = $return;
   }
+  // zohocrm_log($module, "zohocrm_get_zoho_fields_info: module");
+  // zohocrm_log($records, "zohocrm_get_zoho_fields_info: records");
 
   return $records;
 }
@@ -943,7 +925,8 @@ function zohocrm_mapping_enable($mapping_name) {
 function zohocrm_mapping_field_save($mapping_name, $record) {
   $record['mapping_name'] = $mapping_name;
 
-  $keys = array();
+  zohocrm_log ($record, "zohocrm_mapping_field_save");
+  $keys = NULL;
   if (!empty($record['mfid'])) {
     $keys = array('mfid');
   }
@@ -953,7 +936,6 @@ function zohocrm_mapping_field_save($mapping_name, $record) {
   if ($result === FALSE) {
     drupal_set_message(t("Mapping for some of the fields couldn't be saved."), 'error', FALSE);
     watchdog('zohocrm', "Mapping for some of the fields couldn't be saved. Mapping: @mapping", array('@mapping' => $mapping_name), WATCHDOG_ERROR);
-
   }
 }
 
@@ -1029,7 +1011,7 @@ function zohocrm_record_mapping_add($drupal_id, $zoho_id, $mapping) {
 
   zohocrm_log($record, 'ADD RECORD MAPPING');
 
-  $result = drupal_write_record('zohocrm_record_mapping', $record);
+  $result = drupal_write_record('zohocrm_record_mapping', $record, $keys);
 
   if ($result === FALSE) {
     drupal_set_message(t("Record couldn't be saved."), 'error');

@@ -287,7 +287,7 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
     '#title' => t('Drupal to Zoho'),
     '#description' => t('This mapping will be used for sending Drupal data to Zoho.'),
     '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+    '#collapsed' => TRUE,
     '#theme' => 'zohocrm_mapping_fields_table_dtz',
   );
 
@@ -305,7 +305,7 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
   $defaults = (isset ($mapping['fields']) )  ?  $mapping['fields']  :  "";
   $default_option = array('' => '<' . t('none') . '>');
 
-  $form['submit'] = array(
+  $form['dtz']['submit'] = array(  // REVISIT. Need separate menu for dtz and ztd?
     '#type' => 'submit',
     '#value' => t('DTZSave'),
   );
@@ -402,6 +402,8 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
 
     $zoho_options = zohocrm_zoho_select_options($mapping['zoho_module']);
     $drupal_fields = zohocrm_drupal_fields($mapping['drupal_endpoint']);
+    // zohocrm_log ($zoho_options, "zohocrm_mapping_fields_form: zoho_options");
+    // zohocrm_log ($drupal_fields, "zohocrm_mapping_fields_form: drupal_fields");
 
     $i = 0;
     foreach ($drupal_fields as $section_name => $section_fields) {
@@ -485,13 +487,16 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Save'),
+    '#value' => t('ztdSave'),
   );
 
   return $form;
 }
 
 function zohocrm_mapping_fields_form_submit($form, &$form_state) {
+  var_dump($form);
+  var_dump($form_state);
+
   foreach ($form_state['values']['dtz']['fields'] as $record) {
     zohocrm_mapping_field_save($form_state['values']['mapping_name'], $record);
   }
@@ -507,9 +512,7 @@ function zohocrm_mapping_fields_form_submit($form, &$form_state) {
 // function theme_zohocrm_mapping_fields_table_dtz($form) {
 function theme_zohocrm_mapping_fields_table_dtz($vars) {
   $form = $vars[''];  // vars[''] should have been vars['form']. BUG/REVISIT
-  // zohocrm_log ($vars, "theme_zohocrm_mapping_fields_table_dtz: vars");
   $rows = zohocrm_mapping_fields_rows($form);
-  // zohocrm_log ($rows, "theme_zohocrm_mapping_fields_table_dtz: rows");
   $header = array(t('Zoho Field'), t('Drupal Field'), t('Default Value'));
 
   return theme('table', array ('header' => $header, 'rows' => $rows));
@@ -517,11 +520,13 @@ function theme_zohocrm_mapping_fields_table_dtz($vars) {
 
 
 
-function theme_zohocrm_mapping_fields_table_ztd($form) {
+function theme_zohocrm_mapping_fields_table_ztd($vars) {
+  $form = $vars[''];  // vars[''] should have been vars['form']. BUG/REVISIT
   $rows = zohocrm_mapping_fields_rows($form);
   $header = array(t('Drupal Field'), t('Zoho Field'), t('Default Value'));
 
-  return theme('table', array ('header' => $header, 'rows' => $rows, 'id' => 'mapping-fields-ztd'));
+  // return theme('table', array ('header' => $header, 'rows' => $rows, 'id' => 'mapping-fields-ztd'));
+  return theme('table', array ('header' => $header, 'rows' => $rows));
 }
 
 function zohocrm_mapping_fields_rows($form) {

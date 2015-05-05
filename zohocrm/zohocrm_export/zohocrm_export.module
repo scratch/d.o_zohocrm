@@ -124,11 +124,19 @@ function zohocrm_file_download($filepath) {
 }
 
 function zohocrm_export_batch_operation($mapping, $endpoint, $save_path, $max_records, &$context) {
+  zohocrm_log ($endpoint, "zohocrm_export_batch_operation: endpoint");
+  zohocrm_log ($context, "zohocrm_export_batch_operation: context");
+
   if (!isset($context['sandbox']['progress'])) {
     $context['sandbox']['progress'] = 0;
 
-    $sql = preg_replace('/(SELECT )([^ ]*)( FROM)/A', '$1COUNT($2)$3', $endpoint['query_sql_selected']);
-    $context['sandbox']['max'] = db_result(db_query($sql, $endpoint['query_args']));
+    /* $sql = preg_replace('/(SELECT )([^ ]*)( FROM)/A', '$1COUNT($2)$3', $endpoint['query_sql_selected']);
+     */
+    $sql = $endpoint['query_sql_selected'];  // query_sql_selected is now an object.
+
+    /* $context['sandbox']['max'] = db_result(db_query($sql, $endpoint['query_args']));
+     */
+    $context['sandbox']['max'] = $sql->execute()->fetchAssoc(); // REVISIT. fetchAssoc could be fetchAll() ??
 
     $context['sandbox']['date'] = date('YmdHis');
     $context['sandbox']['file_count'] = 0;
