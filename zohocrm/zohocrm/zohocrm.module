@@ -135,11 +135,11 @@ function zohocrm_menu() {
 function zohocrm_theme() {
   return array(
     'zohocrm_mapping_fields_table_dtz' => array(
-      'arguments' => array('form' => NULL),  // REVISIT. This may be variables. And NULL may be wrong.
+      'render element' => 'element',
       'file' => 'zohocrm.admin.inc',
     ),
     'zohocrm_mapping_fields_table_ztd' => array(
-      'arguments' => array('form' => NULL),
+      'render element' => 'element',
       'file' => 'zohocrm.admin.inc',
     ),
   );
@@ -164,23 +164,23 @@ function zohocrm_mapping_load($name) {
   return $mappings;
 }
 
-// -- nk. See #94
+/**
+ * Loads complete mapping (including fields) from the database.
+ *
+ * @param string $name
+ *   Name of the mapping.
+ *
+ * @return array
+ *   Mapping definition.
+ */
 function zohocrm_mapping_fields_load($name) {
   $mapping = zohocrm_mapping_load($name);
 
-  $fields =  array();
-  $result = db_select('zohocrm_mapping_fields', 'f')
+  $fields = db_select('zohocrm_mapping_fields', 'f')
     ->fields('f')
-    ->condition('mapping_name',$name,'=')
+    ->condition('mapping_name', $name, '=')
     ->execute()
-    ->fetchAssoc();
-
-  if (!empty ($result))  {
-    foreach ($result as $k => $v)  {
-      $fields[$k] = $v;
-    }
-  }
-
+    ->fetchAllAssoc('dst', PDO::FETCH_ASSOC);
   $mapping['fields'] = $fields;
 
   return $mapping;
@@ -920,13 +920,17 @@ function zohocrm_mapping_enable($mapping_name) {
 }
 
 /**
+ * Saves mapping of a single field to the database.
  *
+ * @param string $mapping_name
+ *   Name of the field mapping.
+ * @param array $record
+ *   Data to be saved.
  */
 function zohocrm_mapping_field_save($mapping_name, $record) {
   $record['mapping_name'] = $mapping_name;
 
-  zohocrm_log ($record, "zohocrm_mapping_field_save");
-  $keys = NULL;
+  $keys = array();
   if (!empty($record['mfid'])) {
     $keys = array('mfid');
   }
@@ -938,7 +942,6 @@ function zohocrm_mapping_field_save($mapping_name, $record) {
     watchdog('zohocrm', "Mapping for some of the fields couldn't be saved. Mapping: @mapping", array('@mapping' => $mapping_name), WATCHDOG_ERROR);
   }
 }
-
 
 function zohocrm_find_matching_drupal_object($zoho_data, $mapping, $endpoint) {
   // @todo: add an UI option to the mapping to toggle on/off this functionality

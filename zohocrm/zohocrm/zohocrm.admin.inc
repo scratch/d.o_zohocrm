@@ -268,20 +268,29 @@ function zohocrm_mapping_enable_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/zohocrm/mapping';
 }
 
-function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
-  $form = array(
-    '#tree' => TRUE,
-    '#redirect' => 'admin/settings/zohocrm/mapping',
-  );
+/**
+ * Defines a form for configuring field mappings.
+ */
+function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
+  $form['#tree'] = TRUE;
 
   $endpoints = zohocrm_endpoint_info();
-  // zohocrm_log($endpoints, "zohocrm_mapping_fields_form: endpoints");
-  // zohocrm_log($mapping, "zohocrm_mapping_fields_form: mappings");
 
-  $defaults = ( isset($mapping['fields']) )  ?  $mapping['fields']  :  "";
+  $args = array(
+    '@label' => $endpoints[$mapping['drupal_endpoint']]['label'],
+    '@module' => $mapping['zoho_module'],
+  );
+  $title = t('@label to Zoho @module', $args);
+  $description = check_plain($mapping['description']);
+  $form['description'] = array(
+    '#type' => 'markup',
+    '#value' => '<h2>' . $title . '</h2><p>' . $description . '</p>',
+  );
+
+  $defaults = isset($mapping['fields']) ? $mapping['fields'] : array();
   $default_option = array('' => '<' . t('none') . '>');
 
-  // Drupal to Zoho
+  // Drupal to Zoho.
   $form['dtz'] = array(
     '#type' => 'fieldset',
     '#title' => t('Drupal to Zoho'),
@@ -291,36 +300,13 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
     '#theme' => 'zohocrm_mapping_fields_table_dtz',
   );
 
-  $args = array(
-    '@label' => $endpoints[$mapping['drupal_endpoint']]['label'],
-    '@module' => $mapping['zoho_module'],
-  );
-  $title = t("@label to Zoho @module", $args);
-  $description = check_plain($mapping['description']);
-  $form['description'] = array(
-    '#type' => 'markup',
-    '#value' => '<h2>' . $title . '</h2><p>' . $description . '</p>',
-  );
-
-  $defaults = (isset ($mapping['fields']) )  ?  $mapping['fields']  :  "";
-  $default_option = array('' => '<' . t('none') . '>');
-
-  $form['dtz']['submit'] = array(  // REVISIT. Need separate menu for dtz and ztd?
-    '#type' => 'submit',
-    '#value' => t('DTZSave'),
-  );
-
   $drupal_options = zohocrm_drupal_select_options($mapping['drupal_endpoint']);
   $zoho_fields = zohocrm_get_zoho_fields_info($mapping['zoho_module']);
 
-  // zohocrm_log ($drupal_options, "zohocrm_mapping_fields_form: drupal_options");
-  // zohocrm_log ($zoho_fields, "zohocrm_mapping_fields_form: zoho_fields");
-
   $i = 0;
   foreach ($zoho_fields as $section_name => $section_fields) {
-    $form['dtz']['fields'][$i++]['section'] = array(
-      '#type' => 'item',
-      '#value' => check_plain($section_name),
+    $form['dtz'][$i++]['section'] = array(
+      '#markup' => check_plain($section_name),
     );
 
     foreach ($section_fields as $field_config) {
@@ -330,9 +316,8 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
 
       $label = $field_config['label'];
 
-      $form['dtz']['fields'][$i]['field_name'] = array(
-        '#type' => 'markup',
-        '#value' => check_plain($label),
+      $form['dtz'][$i]['field_name'] = array(
+        '#markup' => check_plain($label),
         '#required' => $field_config['req'],
       );
 
@@ -350,39 +335,37 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
         $size = 20;
         $maxlength = $field_config['maxlength'];
       }
-      $form['dtz']['fields'][$i]['default_value'] = array(
+      $form['dtz'][$i]['default_value'] = array(
         '#type' => $type,
-	'#default_value' => (isset ($defaults[$label]['default_value']) )
-				?  check_plain($defaults[$label]['default_value'])
-				: "",
+        '#default_value' => isset($defaults[$label]['default_value']) ? check_plain($defaults[$label]['default_value']) : '',
         '#maxlength' => $maxlength,
         '#size' => $size,
       );
       if ($field_config['type'] == 'Pick List') {
         array_shift($field_config['values']);
         $options = $default_option + array_combine($field_config['values'], $field_config['values']);
-        $form['dtz']['fields'][$i]['default_value']['#options'] = $options;
+        $form['dtz'][$i]['default_value']['#options'] = $options;
       }
 
-      $form['dtz']['fields'][$i]['src'] = array(
+      $form['dtz'][$i]['src'] = array(
         '#type' => 'select',
-        '#default_value' => (isset($defaults[$label]['src']) )  ?  check_plain($defaults[$label]['src'])  : "",
+        '#default_value' => isset($defaults[$label]['src']) ? check_plain($defaults[$label]['src']) : '',
         '#options' => $drupal_options,
       );
 
-      $form['dtz']['fields'][$i]['sync_direction'] = array(
+      $form['dtz'][$i]['sync_direction'] = array(
         '#type' => 'value',
         '#value' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
       );
 
-      $form['dtz']['fields'][$i]['dst'] = array(
+      $form['dtz'][$i]['dst'] = array(
         '#type' => 'value',
         '#value' => $label,
       );
 
-      $form['dtz']['fields'][$i]['mfid'] = array(
+      $form['dtz'][$i]['mfid'] = array(
         '#type' => 'value',
-        '#value' => (isset ($defaults[$label]['mfid'])  )  ?  check_plain($defaults[$label]['src'])  :  "",
+        '#value' => isset($defaults[$label]['mfid']) ? check_plain($defaults[$label]['mfid']) : '',
       );
 
       $i++;
@@ -390,7 +373,7 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
   }
 
   if (module_exists('zohocrm_webhooks')) {
-    // Zoho to Drupal
+    // Zoho to Drupal.
     $form['ztd'] = array(
       '#type' => 'fieldset',
       '#title' => t('Zoho to Drupal'),
@@ -402,55 +385,51 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
 
     $zoho_options = zohocrm_zoho_select_options($mapping['zoho_module']);
     $drupal_fields = zohocrm_drupal_fields($mapping['drupal_endpoint']);
-    // zohocrm_log ($zoho_options, "zohocrm_mapping_fields_form: zoho_options");
-    // zohocrm_log ($drupal_fields, "zohocrm_mapping_fields_form: drupal_fields");
 
     $i = 0;
     foreach ($drupal_fields as $section_name => $section_fields) {
-      $form['ztd']['fields'][$i++]['section'] = array(
-        '#type' => 'item',
-        '#value' => check_plain($section_name),
+      $form['ztd'][$i++]['section'] = array(
+        '#markup' => check_plain($section_name),
       );
 
       foreach ($section_fields as $key => $field_config) {
         $label = $field_config['label'];
 
-        $form['ztd']['fields'][$i]['field_name'] = array(
-          '#type' => 'markup',
-          '#value' => check_plain($label),
+        $form['ztd'][$i]['field_name'] = array(
+          '#markup' => check_plain($label),
         );
 
-        $form['ztd']['fields'][$i]['src'] = array(
+        $form['ztd'][$i]['src'] = array(
           '#type' => 'select',
-          '#default_value' => (isset($defaults[$key]['src']))  ?  $defaults[$key]['src']  :   $key,  // Hack. $key is probably it
+          '#default_value' => isset($defaults[$key]['src']) ? $defaults[$key]['src'] : '',
           '#options' => $zoho_options,
         );
 
-        $form['ztd']['fields'][$i]['default_value'] = array(
+        $form['ztd'][$i]['default_value'] = array(
           '#type' => 'value',
           '#value' => '',
         );
 
-        $form['ztd']['fields'][$i]['sync_direction'] = array(
+        $form['ztd'][$i]['sync_direction'] = array(
           '#type' => 'value',
           '#value' => ZOHOCRM_SYNC_ZOHO_TO_DRUPAL,
         );
 
-        $form['ztd']['fields'][$i]['dst'] = array(
+        $form['ztd'][$i]['dst'] = array(
           '#type' => 'value',
           '#value' => $key,
         );
 
-        $form['ztd']['fields'][$i]['mfid'] = array(
+        $form['ztd'][$i]['mfid'] = array(
           '#type' => 'value',
-          '#value' => (isset($defaults[$key]['mfid']))  ?  $defaults[$key]['mfid']  :  $key,  // Hack. $key may be it.
+          '#value' => isset($defaults[$key]['mfid']) ? $defaults[$key]['mfid'] : '',
         );
 
         $i++;
       }
     }
 
-   $form['webhooks_help'] = array(
+    $form['webhooks_help'] = array(
       '#type' => 'fieldset',
       '#title' => t('Webhook XML data parameter'),
       '#description' => t('On Zoho CRM Webhook configuration page go to section "Parameters in the
@@ -487,21 +466,21 @@ function zohocrm_mapping_fields_form($form_param, &$form_state, $mapping) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('ztdSave'),
+    '#value' => t('Save'),
   );
 
   return $form;
 }
 
+/**
+ * Submit handler for zohocrm_mapping_fields_form().
+ */
 function zohocrm_mapping_fields_form_submit($form, &$form_state) {
-  var_dump($form);
-  var_dump($form_state);
-
-  foreach ($form_state['values']['dtz']['fields'] as $record) {
+  foreach ($form_state['values']['dtz'] as $record) {
     zohocrm_mapping_field_save($form_state['values']['mapping_name'], $record);
   }
   if (isset($form_state['values']['ztd'])) {
-    foreach ($form_state['values']['ztd']['fields'] as $record) {
+    foreach ($form_state['values']['ztd'] as $record) {
       zohocrm_mapping_field_save($form_state['values']['mapping_name'], $record);
     }
   }
@@ -509,42 +488,62 @@ function zohocrm_mapping_fields_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/zohocrm/mapping';
 }
 
-// function theme_zohocrm_mapping_fields_table_dtz($form) {
-function theme_zohocrm_mapping_fields_table_dtz($vars) {
-  $form = $vars[''];  // vars[''] should have been vars['form']. BUG/REVISIT
-  $rows = zohocrm_mapping_fields_rows($form);
-  $header = array(t('Zoho Field'), t('Drupal Field'), t('Default Value'));
+/**
+ * Theme function for "Drupal to Zoho" fieldset.
+ *
+ * Renders fields as a HTML table.
+ *
+ * @see zohocrm_mapping_fields_form()
+ */
+function theme_zohocrm_mapping_fields_table_dtz($variables) {
+  $vars = array(
+    'header' => array(t('Zoho Field'), t('Drupal Field'), t('Default Value')),
+    'rows' => zohocrm_mapping_fields_rows($variables['element']),
+    'attributes' => array(
+      'id' => 'mapping-fields-dtz',
+    ),
+  );
 
-  return theme('table', array ('header' => $header, 'rows' => $rows));
+  return theme('table', $vars);
 }
 
+/**
+ * Theme function for "Zoho to Drupal" fieldset.
+ *
+ * Renders fields as a HTML table.
+ *
+ * @see zohocrm_mapping_fields_form()
+ */
+function theme_zohocrm_mapping_fields_table_ztd($variables) {
+  $vars = array(
+    'header' => array(t('Drupal Field'), t('Zoho Field'), t('Default Value')),
+    'rows' => zohocrm_mapping_fields_rows($variables['element']),
+    'attributes' => array(
+      'id' => 'mapping-fields-ztd',
+    ),
+  );
 
-
-function theme_zohocrm_mapping_fields_table_ztd($vars) {
-  $form = $vars[''];  // vars[''] should have been vars['form']. BUG/REVISIT
-  $rows = zohocrm_mapping_fields_rows($form);
-  $header = array(t('Drupal Field'), t('Zoho Field'), t('Default Value'));
-
-  // return theme('table', array ('header' => $header, 'rows' => $rows, 'id' => 'mapping-fields-ztd'));
-  return theme('table', array ('header' => $header, 'rows' => $rows));
+  return theme('table', $vars);
 }
 
+/**
+ * Helper function for generating table rows.
+ *
+ * @see theme_zohocrm_mapping_fields_table_dtz()
+ * @see theme_zohocrm_mapping_fields_table_ztd()
+ */
 function zohocrm_mapping_fields_rows($form) {
-  // zohocrm_log ($form, "zohocrm_mapping_fields_rows: form");
   $rows = array();
-
-  if (!isset($form['fields']))   // Only happens when there is no network / zoho is unreachable.
-    return NULL;
-
-  // foreach (element_children($form['fields']) as $key) {
-  foreach ($form['fields'] as $key => $value) {
-    $field = (array )$value;
-    //zohocrm_log($key, "zohocrm_mapping_fields_rows: key");
-    //zohocrm_log($value, "zohocrm_mapping_fields_rows: field");
+  foreach (element_children($form) as $key) {
+    $field = &$form[$key];
     $row = array();
     if (isset($field['section'])) {
-      /* $row[] = render($field['section']['#value']); */
-      $row[] = array ('data' => render($field['section']['#value']), 'style' => 'font-weight: Bold');
+      $row[] = array(
+        'data' => drupal_render($field['section']),
+        'class' => 'section-label',
+        'colspan' => 3,
+        'style' => 'font-weight: bold',
+      );
     }
     else {
       if (isset($field['field_name']['#required']) && $field['field_name']['#required']) {
@@ -554,16 +553,9 @@ function zohocrm_mapping_fields_rows($form) {
       else {
         $required = $required_class = '';
       }
-
-      $row[] = array('data' => render($field['field_name']['#value']) . $required, 'class' => 'field-name' . $required_class);
+      $row[] = array('data' => drupal_render($field['field_name']) . $required, 'class' => 'field-name' . $required_class);
       $row[] = array('data' => drupal_render($field['src']), 'class' => 'source-field');
       $row[] = array('data' => drupal_render($field['default_value']) . drupal_render($field['dst']) . drupal_render($field['mfid']) . drupal_render($field['sync_direction']), 'class' => 'default-value');
-
-      /*
-      $row[] = drupal_render($field['field_name']);
-      $row[] = drupal_render($field['src']);
-      $row[] = drupal_render($field['default_value']) . drupal_render($field['dst']) . drupal_render($field['mfid']) . drupal_render($field['sync_direction']);
-       */
     }
     $rows[] = $row;
   }
