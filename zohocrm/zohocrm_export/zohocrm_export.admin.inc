@@ -70,10 +70,10 @@ function zohocrm_export_form_submit($form, &$form_state) {
   $endpoint = zohocrm_endpoint_info($mapping['drupal_endpoint']);
 
   if (!empty($form_state['values']['include_mapped'])) {
-    $endpoint['query_sql_selected'] = $endpoint['query_sql']['all'];
+    $endpoint['query_object_selected'] = $endpoint['query_object']['all'];
   }
   else {
-    $endpoint['query_sql_selected'] = $endpoint['query_sql']['notmapped'];
+    $endpoint['query_object_selected'] = $endpoint['query_object']['notmapped'];
   }
 
   $batch = array(

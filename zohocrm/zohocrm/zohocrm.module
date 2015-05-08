@@ -256,60 +256,54 @@ function zohocrm_endpoint_fields_info($endpoint) {
 }
 
 /**
- * Builds sql query that can return all drupal
- * objects for the given drupal endpoint and
- * adds sql query and args as elements to the
- * endpoint array.
+ * Builds SelectQuery objects that can return drupal records for the given
+ * drupal endpoint.
  *
- * @param $endpoint
- *   Drupal endpoint array
+ * SelectQuery objects are added to the endpoint under 'query_object' array
+ * element:
+ *       - all: queries all Drupal records that can be managed by this endpoint
+ *              regardless whether mapping to Zoho CRM already exists or not
+ *    - mapped: queries only Drupal records already mapped to Zoho CRM record
+ * - notmapped: queries only Drupal records that are not yet mapped to Zoho CRM
+ *              record
+ *
+ * @param array $endpoint
+ *   Drupal endpoint.
+ *
+ * @return array
+ *   Drupal endpoint with SelectQuery objects added to it.
  */
 function zohocrm_query_build(&$endpoint) {
   $key = $endpoint['key'];
   $table = $endpoint['table'];
 
-  $args = array();
-  $where = '';
+  $query = db_select($table, 'tbl')
+    ->fields('tbl', array($key))
+    ->orderBy('tbl.' . $key);
 
-  $query = db_select ($table, 'tbl')
-     ->fields ('tbl', array ($key));
-
-  
-  if (!empty($endpoint['where']) && is_array($endpoint['where'])) {
-    $conditions = array();
+  if (isset($endpoint['where']) && is_array($endpoint['where'])) {
     foreach ($endpoint['where'] as $column => $value) {
-      $query->condition('tbl'.$column, $value,'=');
-      $args[] = $value;
+      $query->condition('tbl.' . $column, $value, '=');
     }
   }
 
-  if (empty($where))
-    $query = $query->condition('tbl'.'zoho_id',"NULL",'=');  // REVISIT: ISNULL(z.zoho_id)
+  // All drupal records.
+  $endpoint['query_object']['all'] = $query;
 
-  $query = $query->orderBy('tbl'.$key);
+  $condition = "tbl.$key = z.drupal_id AND z.drupal_endpoint = :endpoint_type";
+  $args = array(':endpoint_type' => $endpoint['type']);
 
-  // All drupal records
-  $endpoint['query_sql']['all'] = "SELECT d.$key FROM {" . $table . "} d" . $where . " ORDER BY d.$key";
+  // Only Drupal records that are already mapped to zoho record.
+  $query_mapped = clone $query;
+  $query_mapped->innerJoin('zohocrm_record_mapping', 'z', $condition, $args);
+  $endpoint['query_object']['mapped'] = $query_mapped;
 
-  $endpoint['query_sql']['all'] = $query;
-
-  // Only Drupal records that are already mapped to zoho record
-  $endpoint['query_sql']['mapped'] = "SELECT d.$key FROM {" . $table . "} d INNER JOIN {zohocrm_record_mapping} z ON d.$key = z.drupal_id" . $where . " ORDER BY d.$key";
-
-  $query_mapped = $query;
-  $query_mapped->innerJoin('zohocrm_record_mapping', 'z', "tbl.$key=z.drupal_id");
-
-  $endpoint['query_sql']['mapped'] = $query_mapped;
-
-  // Only Drupal records that are not yet mapped to zoho record
-  $query_notmapped = $query;
-  $query_notmapped->leftJoin('zohocrm_record_mapping', 'z', "tbl.$key=z.drupal_id");
-$endpoint['query_sql']['notmapped'] = $query_notmapped;
-
-  $endpoint['query_args'] = $args;
+  // Only Drupal records that are not yet mapped to zoho record.
+  $query_notmapped = clone $query;
+  $query_notmapped->leftJoin('zohocrm_record_mapping', 'z', $condition, $args);
+  $query_notmapped->isNull('z.zoho_id');
+  $endpoint['query_object']['notmapped'] = $query_notmapped;
 }
-
-
 
 function zohocrm_get_client() {
   $disabled = variable_get('zohocrm_client_disabled', 0);

@@ -126,18 +126,11 @@ function zohocrm_file_download($filepath) {
 function zohocrm_export_batch_operation($mapping, $endpoint, $save_path, $max_records, &$context) {
   zohocrm_log ($endpoint, "zohocrm_export_batch_operation: endpoint");
   zohocrm_log ($context, "zohocrm_export_batch_operation: context");
+  $query = $endpoint['query_object_selected'];
 
   if (!isset($context['sandbox']['progress'])) {
     $context['sandbox']['progress'] = 0;
-
-    /* $sql = preg_replace('/(SELECT )([^ ]*)( FROM)/A', '$1COUNT($2)$3', $endpoint['query_sql_selected']);
-     */
-    $sql = $endpoint['query_sql_selected'];  // query_sql_selected is now an object.
-
-    /* $context['sandbox']['max'] = db_result(db_query($sql, $endpoint['query_args']));
-     */
-    $context['sandbox']['max'] = $sql->execute()->fetchAssoc(); // REVISIT. fetchAssoc could be fetchAll() ??
-
+    $context['sandbox']['max'] = $query->countQuery()->execute()->fetchField();
     $context['sandbox']['date'] = date('YmdHis');
     $context['sandbox']['file_count'] = 0;
     $context['sandbox']['file_prefix'] = $save_path . '/zcrm_' . $mapping['zoho_module'] . '_' . $context['sandbox']['date'] . '_';
@@ -150,11 +143,12 @@ function zohocrm_export_batch_operation($mapping, $endpoint, $save_path, $max_re
   // Number of records to export in single request.
   $limit = variable_get('zohocrm_export_limit', 50);
 
-  $result = db_query_range($endpoint['query_sql_selected'], $endpoint['query_args'], $context['sandbox']['progress'], $limit);
+  $query->range($context['sandbox']['progress'], $limit);
+  $result = $query->execute();
 
   $f = fopen($context['sandbox']['current_file'], "a");
 
-  while ($row = db_fetch_object($result)) {
+  while ($drupal_id = $result->fetchField()) {
     // Zoho CRM imposes limits on number of records and file size for CSV files
     // that can be imported so we split export into multiple files to comply with
     // Zoho's limitations.
@@ -164,7 +158,7 @@ function zohocrm_export_batch_operation($mapping, $endpoint, $save_path, $max_re
       $f = _zohocrm_export_new_file($context, $header);
     }
 
-    $object = $endpoint['load_callback']($row->{$endpoint['key']});
+    $object = $endpoint['load_callback']($drupal_id);
     $record = zohocrm_prepare_data($mapping, $object, ZOHOCRM_SYNC_DRUPAL_TO_ZOHO);
     fputcsv($f, $record);
 
@@ -224,9 +218,9 @@ function _zohocrm_export_new_file(&$context) {
 }
 
 function _zohocrm_export_csv_header($mapping, $endpoint) {
-  $result = db_query_range($endpoint['query_sql_selected'], $endpoint['query_args'], 0, 1);
-  $row = db_fetch_object($result);
-  $object = $endpoint['load_callback']($row->{$endpoint['key']});
+  $query = $endpoint['query_object_selected'];
+  $drupal_id = $query->range(0, 1)->execute()->fetchField();
+  $object = $endpoint['load_callback']($drupal_id);
   $record = zohocrm_prepare_data($mapping, $object, ZOHOCRM_SYNC_DRUPAL_TO_ZOHO);
 
   return array_keys($record);
