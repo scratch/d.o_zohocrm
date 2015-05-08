@@ -948,15 +948,17 @@ function zohocrm_find_matching_drupal_object($zoho_data, $mapping, $endpoint) {
 }
 
 function zohocrm_record_mapping_get_zoho_id($drupal_endpoint, $zoho_module, $drupal_id) {
-  $sql = "SELECT zoho_id FROM {zohocrm_record_mapping} WHERE drupal_endpoint = '%s' AND drupal_id = %d AND zoho_module = '%s'";
+  $sql = "SELECT zoho_id FROM {zohocrm_record_mapping} WHERE drupal_endpoint = ? AND drupal_id = ? AND zoho_module = ?";
+  $result = db_query($sql, array($drupal_endpoint, $drupal_id, $zoho_module));
 
-  return db_result(db_query($sql, $drupal_endpoint, $drupal_id, $zoho_module));
+  return $result->fetchField();
 }
 
 function zohocrm_record_mapping_get_drupal_id($drupal_endpoint, $zoho_module, $zoho_id) {
-  $sql = "SELECT drupal_id FROM {zohocrm_record_mapping} WHERE drupal_endpoint = '%s' AND zoho_id = '%s' AND zoho_module = '%s'";
+  $sql = "SELECT drupal_id FROM {zohocrm_record_mapping} WHERE drupal_endpoint = ? AND zoho_id = ? AND zoho_module = ?";
+  $result = db_query($sql, array($drupal_endpoint, $zoho_id, $zoho_module));
 
-  return db_result(db_query($sql, $drupal_endpoint, $zoho_id, $zoho_module));
+  return $result->fetchField();
 }
 
 /**
@@ -1008,7 +1010,7 @@ function zohocrm_record_mapping_add($drupal_id, $zoho_id, $mapping) {
 
   zohocrm_log($record, 'ADD RECORD MAPPING');
 
-  $result = drupal_write_record('zohocrm_record_mapping', $record, $keys);
+  $result = drupal_write_record('zohocrm_record_mapping', $record);
 
   if ($result === FALSE) {
     drupal_set_message(t("Record couldn't be saved."), 'error');
