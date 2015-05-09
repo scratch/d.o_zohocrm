@@ -2,17 +2,47 @@
 
 /**
  * @file
- * Field handlers that convert Drupal field values into Zoho compatible format.
+ * Defines common field handlers used by all zohocrm_* modules.
  *
+ * Field handlers are used for conversion of field values between Drupal and
+ * Zoho compatible formats.
  */
 
+/**
+ * Default field handler that just passes source value without any conversion.
+ *
+ * @param string $source_field
+ *   Name of the source field.
+ * @param string $destination_field
+ *   Name of the destination field.
+ * @param object $data
+ *   Object containing source data.
+ * @param int $sync_direction
+ *   Direction of sending data (Drupal to Zoho or Zoho to Drupal).
+ * @param object $destination_object
+ *   Drupal object into which to save received Zoho data. Can be used only
+ *   during Zoho to Drupal sync.
+ *
+ * @return mixed
+ *   Value converted into the format understood by the destination end of
+ *   synchronization.
+ *   Note: This value is ignored during Zoho to Drupal sync. Instead it must be
+ *   assigned to the appropriate property ($destination_field) of the
+ *   destination object.
+ */
 function zohocrm_field_handler_default($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
   if (!empty($destination_object)) {
     $destination_object->{$destination_field} = $data->{$source_field};
   }
+
   return $data->{$source_field};
 }
 
+/**
+ * Converts between Drupal timestamp and Zoho DateTime format.
+ *
+ * @see zohocrm_field_handler_default()
+ */
 function zohocrm_field_handler_timestamp($source_field, $destination_field, $data, $sync_direction, &$destination_object = NULL) {
   $result = '';
   $value = $data->{$source_field};
@@ -21,10 +51,8 @@ function zohocrm_field_handler_timestamp($source_field, $destination_field, $dat
 
     case ZOHOCRM_SYNC_DRUPAL_TO_ZOHO:
       if (!empty($value) && is_numeric($value)) {
-        $timezone_name = variable_get('zohocrm_timezone', '');
-        $timezone = new DateTimeZone($timezone_name);
-        $date = new DateTime("now", $timezone);
-        $result = format_date($value, 'custom', ZOHOCRM_DATETIME_FORMAT, $timezone->getOffset($date));
+        $timezone = variable_get('zohocrm_timezone', NULL);
+        $result = format_date($value, 'custom', ZOHOCRM_DATETIME_FORMAT, $timezone);
       }
       break;
 
@@ -45,16 +73,3 @@ function zohocrm_field_handler_timestamp($source_field, $destination_field, $dat
 
   return $result;
 }
-
-//function zohocrm_field_handler_concatenate_dtz($fields, $object) {
-//  $values = array();
-//
-//  foreach ($fields as $field) {
-//    $value = trim($object->$field);
-//    if (is_string($value) && $value != '') {
-//      $values[] = $value;
-//    }
-//  }
-//
-//  return implode(' ', $values);
-//}
