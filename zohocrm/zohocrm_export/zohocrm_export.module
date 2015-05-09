@@ -159,7 +159,17 @@ function zohocrm_export_batch_operation($mapping, $endpoint, $save_path, $max_re
     }
 
     $object = $endpoint['load_callback']($drupal_id);
+
+    // Allow other modules to alter Drupal object before it is passed to
+    // zohocrm field handlers.
+    drupal_alter('zohocrm_outgoing_object', $object, $mapping);
+
     $record = zohocrm_prepare_data($mapping, $object, ZOHOCRM_SYNC_DRUPAL_TO_ZOHO);
+
+    // Allow other modules to alter Zoho record before it is exported to CSV file.
+    $zoho_id = zohocrm_record_mapping_get_zoho_id($mapping['drupal_endpoint'], $mapping['zoho_module'], $object->{$endpoint['key']});
+    drupal_alter('zohocrm_outgoing_record', $record, $mapping, $object->{$endpoint['key']}, $zoho_id);
+
     fputcsv($f, $record);
 
     $context['results']['count'] = ++$context['sandbox']['progress'];

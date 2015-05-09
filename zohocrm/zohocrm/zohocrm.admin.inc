@@ -317,7 +317,7 @@ function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
       $label = $field_config['label'];
 
       $form['dtz'][$i]['field_name'] = array(
-        '#markup' => check_plain($label),
+        '#markup' => check_plain($field_config['dv']),
         '#required' => $field_config['req'],
       );
 
@@ -596,12 +596,13 @@ function zohocrm_mapping_add_form($form, &$form_state) {
     '#required' => TRUE,
   );
 
-  $zoho_modules = zohocrm_get_zoho_modules();
-  $options = array('' => '') + array_combine($zoho_modules, $zoho_modules);
   $form['zoho_module'] = array(
-    '#type' => 'select',
+    '#type' => 'textfield',
     '#title' => t('Zoho Module'),
-    '#options' => $options,
+    '#description' => t('Name of the Zoho module (Contacts, Accounts, etc). For
+                        custom modules always use internal module name starting
+                        with "CustomModule". This name can be found on Modules
+                        config page in Zoho CRM. For example: CustomModule1.'),
     '#required' => TRUE,
   );
 
@@ -616,6 +617,13 @@ function zohocrm_mapping_add_form($form, &$form_state) {
 function zohocrm_mapping_add_form_validate($form, &$form_state) {
   if (preg_match('/[^a-zA-Z0-9_]/', $form_state['values']['mapping_name'])) {
     form_set_error('mapping_name', t('Mapping Name can contain only alpha-numeric characters and underscores.'));
+  }
+
+  $module = $form_state['values']['zoho_module'];
+  $builtin = in_array($module, zohocrm_get_zoho_modules()) ? TRUE : FALSE;
+  $custom = preg_match('/CustomModule[0-9]+/', $module);
+  if (!$builtin && !$custom) {
+    form_set_error('zoho_module', t('Ivalid Zoho module name.'));
   }
 }
 
@@ -698,7 +706,7 @@ function zohocrm_zoho_select_options($zoho_module) {
 
   foreach ($zoho_fields as $section_name => $section_fields) {
     foreach ($section_fields as $field) {
-      $zoho_options[$section_name][$field['label']] = $field['label'];
+      $zoho_options[$section_name][$field['label']] = $field['dv'];
     }
   }
 
@@ -714,7 +722,8 @@ function zohocrm_zoho_select_options($zoho_module) {
 
     // Add record Id as first field in the second optgroup.
     $key = zohocrm_zoho_module_prefix($zoho_module) . ' Id';
-    $zoho_options[$second_optgroup] = array($key => $key) + $zoho_options[$second_optgroup];
+    $label = t('Zoho Record Id');
+    $zoho_options[$second_optgroup] = array($key => $label) + $zoho_options[$second_optgroup];
   }
 
   // Add fields from related modules.

@@ -180,4 +180,5 @@ function zohocrm_uninstall() {
   variable_del('zohocrm_webhooks_authtoken');
   variable_del('zohocrm_debug_mode');
   variable_del('zohocrm_users_last_update');
+  variable_del('zohocrm_insert_duplicate_check');
 }
