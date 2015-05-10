@@ -2,15 +2,8 @@
 
 /**
  * @file
- * Install hooks for zohocrm module.
+ * Install, update and uninstall functions for the Zoho CRM module.
  */
-
-/**
- * Implements hook_install().
- */
-function zohocrm_install() {
-  /* drupal_install_schema('zohocrm');  -- nk REVISIT. Not require in 7.x */
-}
 
 /**
  * Implements hook_schema().
@@ -113,7 +106,9 @@ function zohocrm_schema() {
       ),
     ),
     'primary key' => array('mfid'),
-    'unique keys' => array('name_dst_dir' => array('mapping_name', 'dst', 'sync_direction')),
+    'unique keys' => array(
+      'name_dst_dir' => array('mapping_name', 'dst', 'sync_direction'),
+    ),
   );
 
   $schema['zohocrm_record_mapping'] = array(
@@ -171,8 +166,6 @@ function zohocrm_schema() {
  * Implements hook_uninstall().
  */
 function zohocrm_uninstall() {
-  /* drupal_uninstall_schema('zohocrm'); -- nk. No need to explicitely uninstall */
-
   variable_del('zohocrm_authtoken');
   variable_del('zohocrm_client_disabled');
   variable_del('zohocrm_timezone');
