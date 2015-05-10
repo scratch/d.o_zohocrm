@@ -64,5 +64,16 @@ function zohocrm_ubercart_ca_action_form($form_state, $settings) {
     '#description' => empty($options) ? t('There are no Zoho CRM mappings defined.') : '',
   );
 
+  $args = array(
+    '@url' => url('https://www.zoho.com/crm/help/automation/workflow-rules.html'),
+  );
+  $form['wf_trigger'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Trigger Zoho workflow rules'),
+    '#description' => t('Trigger <a href="@rules">workflow rules</a> in
+                        Zoho CRM when action is executed.', $args),
+    '#default_value' => $settings['wf_trigger'],
+  );
+
   return $form;
 }
