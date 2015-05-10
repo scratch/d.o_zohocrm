@@ -5,6 +5,3 @@ php = 5.3
 core = 7.x
 dependencies[] = zohocrm
 dependencies[] = rules
-files[] = zohocrm_webhooks.info
-files[] = zohocrm_webhooks.module
-files[] = zohocrm_webhooks.rules.inc

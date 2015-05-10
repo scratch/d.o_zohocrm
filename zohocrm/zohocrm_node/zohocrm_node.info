@@ -4,6 +4,3 @@ package = Zoho CRM
 php = 5.3
 dependencies[] = zohocrm
 core = 7.x
-
-files[] = zohocrm_node.module
-files[] = zohocrm_node.rules.inc
