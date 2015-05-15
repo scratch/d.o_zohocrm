@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Zoho CRM integration base module. 
+ * Zoho CRM integration base module.
  *
- * Provides hooks for defining mappings, CRUD functionality and admin interface for
- * mapping fields between Drupal and Zoho CRM.
+ * Provides hooks for defining mappings, CRUD functionality and admin
+ * interface for mapping fields between Drupal and Zoho CRM.
  */
 
 // Date formats understood by Zoho CRM.
@@ -196,7 +196,7 @@ function zohocrm_permission() {
       'title' => t('administer zohocrm'),
       'description' => t('Drupal/Zohocrm integration module'),
     ),
-);
+  );
 }
 
 /**
@@ -678,15 +678,15 @@ function zohocrm_prepare_data($mapping, $data, $sync_direction, &$object = NULL)
     else {
       $handler = $fields_info[$field[$drupal_field]]['handler'];
       $args = array(
-        $field['src'], 
-        $field['dst'], 
+        $field['src'],
+        $field['dst'],
         $data, $sync_direction,
         &$object,
       );
       $value = zohocrm_execute_field_handler($handler, $args);
 
-      // Use default value if field value is empty 
-      // (0 is not treated as empty value here)
+      // Use default value if field value is empty
+      // (0 is not treated as empty value here).
       $value = (!is_numeric($value) && empty($value))
         ? $field['default_value']
         : $value;
@@ -951,7 +951,10 @@ function zohocrm_get_users() {
 }
 
 /**
- * Returns prefix used for constructing record id field name for the given Zoho CRM module.
+ * Return prefix for record id field name.
+ *
+ * Returns prefix used to construct record id field name for the given
+ * Zoho CRM module.
  *
  * Examples:
  *
@@ -1167,8 +1170,7 @@ function zohocrm_drupal_id_from_object($object, $mapping) {
 }
 
 /**
- * Controls whether current session is being used for
- * receiving Zoho data.
+ * Controls whether current session is being used for receiving Zoho data.
  */
 function zohocrm_is_receiving_zoho_data($status = NULL) {
   static $receiving = FALSE;
@@ -1181,6 +1183,8 @@ function zohocrm_is_receiving_zoho_data($status = NULL) {
 }
 
 /**
+ * Return Boolean specifing whether sync-back required.
+ *
  * Complex sync workflows may require that data received
  * from Zoho CRM is sent back to Zoho after it has been saved
  * to Drupal. This function can be used by third party code
@@ -1222,14 +1226,16 @@ function _zohocrm_build_zoho_record_url($id, $module) {
 }
 
 /**
- * Returns TRUE if Drupal is configured to delete Zoho
- * record when corresponding drupal object is deleted.
+ * Return Boolean specifying action when Drupal record deleted.
  *
- * @param $object
- *   Drupal object being deleted (e.g. node, user)
+ * Returns TRUE if Drupal is configured to delete Zoho record when
+ * corresponding drupal object is deleted.
+ *
+ * @param string $object  // string ??
+ *   Drupal object being deleted (e.g. node, user).
  * @param string $type
- *   string specifying type of the object being deleted
- *   valid values: node, user
+ *   String specifying type of the object being deleted
+ *   valid values: node, user.
  */
 function zohocrm_dtz_delete_sync_status($object, $type) {
   $sync_enabled = FALSE;
@@ -1274,11 +1280,13 @@ function zohocrm_dtz_delete_sync_status($object, $type) {
 }
 
 /**
- * Sets "Created By" and "Modified By" Zoho fields to the
- * acting (currently logged in) Drupal User when applicable.
+ * Sets user-related zoho fields.
+ *
+ * Sets "Created By" and "Modified By" Zoho fields to the acting
+ * (currently logged in) Drupal User when applicable.
  *
  * @param array $record
- *   record being sent to Zoho
+ *   record being sent to Zoho.
  * @param int $zoho_id
  *   Zoho record ID. Used to determine whether this is insert or update.
  */
