@@ -260,21 +260,19 @@ function zohocrm_endpoint_fields_info($endpoint) {
 }
 
 /**
- * Build SelectQuery objects to return drupal records for given drupal endpoint.
+ * Builds SelectQuery objects and adds them to the endpoint array.
  *
- * SelectQuery objects are added to the endpoint under 'query_object' array
- * element:
- *       - all: queries all Drupal records that can be managed by this endpoint
+ * SelectQuery objects can be used to fetch Drupal objects managed by the given
+ * Drupal endpoint.
+ *
+ * - all: queries all Drupal records that can be managed by this endpoint
  *              regardless whether mapping to Zoho CRM already exists or not
- *    - mapped: queries only Drupal records already mapped to Zoho CRM record
+ * - mapped: queries only Drupal records already mapped to Zoho CRM record
  * - notmapped: queries only Drupal records that are not yet mapped to Zoho CRM
  *              record.
  *
  * @param array $endpoint
  *   Drupal endpoint.
- *
- * @return array
- *   Drupal endpoint with SelectQuery objects added to it.
  */
 function zohocrm_query_build(&$endpoint) {
   $key = $endpoint['key'];
@@ -1231,7 +1229,8 @@ function _zohocrm_build_zoho_record_url($id, $module) {
  * Returns TRUE if Drupal is configured to delete Zoho record when
  * corresponding drupal object is deleted.
  *
- * @param string $object  // string ??
+ * @param object $object
+ *
  *   Drupal object being deleted (e.g. node, user).
  * @param string $type
  *   String specifying type of the object being deleted
