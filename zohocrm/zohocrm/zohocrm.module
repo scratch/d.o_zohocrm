@@ -148,7 +148,13 @@ function zohocrm_theme() {
 }
 
 /**
- * Load mapping fields for mapping name.
+ * Loads mapping from the database.
+ *
+ * @param string $name
+ *   Mapping name.
+ *
+ * @return array
+ *   Loaded mapping definition without fields.
  */
 function zohocrm_mapping_load($name) {
   $result = db_select('zohocrm_mapping', 'm')
@@ -171,7 +177,7 @@ function zohocrm_mapping_load($name) {
  *   Name of the mapping.
  *
  * @return array
- *   Mapping definition.
+ *   Loaded mapping definition including fields.
  */
 function zohocrm_mapping_fields_load($name) {
   $mapping = zohocrm_mapping_load($name);
@@ -213,8 +219,8 @@ function zohocrm_invoke_all() {
   $hook = $args[0];
   unset($args[0]);
   $return = array();
+
   foreach (module_implements($hook) as $module) {
-    // zohocrm_log ($module, "zohocrm_invoke_all");
     $function = $module . '_' . $hook;
     $result = call_user_func_array($function, $args);
     if (isset($result) && is_array($result)) {
@@ -229,12 +235,16 @@ function zohocrm_invoke_all() {
 /**
  * Invokes a hook_zohocrm_endpoint_info() in all modules.
  *
- * @return hook-dependent
- *   The returned value of the invoked hooks.
+ * @param string $endpoint
+ *   Drupal endpoint name.
+ *
+ * @return array
+ *   Endpoint info array if endpoint name is provided, otherwise array of all
+ *   defined endpoints.
  */
 function zohocrm_endpoint_info($endpoint = NULL) {
   $return = zohocrm_invoke_all('zohocrm_endpoint_info');
-  // zohocrm_log ($return, "zohocrm_endpoint_info");
+
   if (!empty($endpoint)) {
     $return = $return[$endpoint];
     zohocrm_query_build($return);
@@ -248,8 +258,11 @@ function zohocrm_endpoint_info($endpoint = NULL) {
 /**
  * Invokes a hook_zohocrm_endpoint_fields_info() in all modules.
  *
- * @return hook-dependent
- *   The returned value of the invoked hooks.
+ * @param string $endpoint
+ *   Drupal endpoint name.
+ *
+ * @return array
+ *   Array of fields that are defined for the given endpoint.
  */
 function zohocrm_endpoint_fields_info($endpoint) {
   $return = zohocrm_invoke_all('zohocrm_endpoint_fields_info', $endpoint);
@@ -266,7 +279,7 @@ function zohocrm_endpoint_fields_info($endpoint) {
  * Drupal endpoint.
  *
  * - all: queries all Drupal records that can be managed by this endpoint
- *              regardless whether mapping to Zoho CRM already exists or not
+ *        regardless whether mapping to Zoho CRM already exists or not
  * - mapped: queries only Drupal records already mapped to Zoho CRM record
  * - notmapped: queries only Drupal records that are not yet mapped to Zoho CRM
  *              record.
@@ -308,13 +321,12 @@ function zohocrm_query_build(&$endpoint) {
 
 
 /**
- * Return zohocrm client object, if it is installed and setup.
+ * Instantiates and returns ZohoCRM/Client object.
  *
- * @return object
- *   Client object if setup
- *   FALSE if client disabled,
- *            authentication token not setup,
- *            ZohoCRM library not found.
+ * ZohoCRM Client is used for communication with Zoho CRM via Zoho CRM API.
+ *
+ * @return \ZohoCRM\Client
+ *   Zoho CRM client object or FALSE on error.
  */
 function zohocrm_get_client() {
   $disabled = variable_get('zohocrm_client_disabled', 0);
@@ -337,9 +349,8 @@ function zohocrm_get_client() {
   return new ZohoCRM\Client($authtoken);
 }
 
-
 /**
- * Return static list of zoho modules.
+ * Returns list of Zoho CRM Modules that are supported by Zoho CRM API.
  */
 function zohocrm_get_zoho_modules() {
   return array(
@@ -706,7 +717,20 @@ function zohocrm_prepare_data($mapping, $data, $sync_direction, &$object = NULL)
 }
 
 /**
- * Execute handler setup of zoho module.
+ * Executes field handler.
+ *
+ * Field handlers are used during sending or receiving data to convert source
+ * value into the format compatible with the destination. For example Unix
+ * timestamp from the Drupal database should be converted to the DateTime format
+ * expected by Zoho CRM before sending Drupal data to Zoho.
+ *
+ * @param string $handler
+ *   Handler name.
+ * @param array $args
+ *   Arguments to be passed to the handler.
+ *
+ * @see: zohocrm_prepare_data()
+ * @see: zohocrm_field_handler_timestamp()
  */
 function zohocrm_execute_field_handler($handler, $args) {
   $value = NULL;
@@ -922,7 +946,7 @@ function zohocrm_get_zoho_fields_related($module) {
 }
 
 /**
- * Gets user list for the zohoCRM users module.
+ * Retruns a list of registered Zoho CRM users.
  */
 function zohocrm_get_users() {
   $last_update = variable_get('zohocrm_users_last_update', 0);
@@ -1059,7 +1083,7 @@ function zohocrm_mapping_field_save($mapping_name, $record) {
 
 
 /**
- * Call the function mapped with the specificed zohoCRM endpoint.
+ *
  */
 function zohocrm_find_matching_drupal_object($zoho_data, $mapping, $endpoint) {
   // @todo: add an UI option to the mapping to toggle on/off this functionality
