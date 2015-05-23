@@ -384,25 +384,14 @@ function zohocrm_get_zoho_modules() {
  *   Array of mappings
  */
 function zohocrm_get_mappings($active = TRUE) {
-  $mappings = array();
-
-  // Status = 1 condition should be applied only if $active == TRUE.
-  $qry = db_select('zohocrm_mapping', 'm', array('fetch' => PDO::FETCH_ASSOC))
+  $query = db_select('zohocrm_mapping', 'm', array('fetch' => PDO::FETCH_ASSOC))
     ->fields('m');
 
-  if ($active == TRUE) {
-    $qry->condition('status', 1, '=');
+  if ($active) {
+    $query->condition('status', 1);
   }
 
-  $rows = $qry->execute()->fetchAll();
-
-  $mappings = array();
-  foreach ($rows as $id => $row) {
-    $mappings[$row['mapping_name']] = $row;
-  }
-
-  zohocrm_log($mappings, "zohocrm_get_mappings:");
-  return $mappings;
+  return $query->execute()->fetchAllAssoc('mapping_name');
 }
 
 /**
