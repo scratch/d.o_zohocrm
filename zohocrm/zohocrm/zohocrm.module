@@ -2,15 +2,17 @@
 
 /**
  * @file
- * Base module for Zoho CRM integration. Provides admin interface for
- * mapping fields between Drupal and Zoho CRM.
+ * Zoho CRM integration base module.
+ *
+ * Provides hooks for defining mappings, CRUD functionality and admin
+ * interface for mapping fields between Drupal and Zoho CRM.
  */
 
-// Date formats understood by Zoho CRM
+// Date formats understood by Zoho CRM.
 define('ZOHOCRM_DATE_FORMAT', 'Y-m-d');
 define('ZOHOCRM_DATETIME_FORMAT', 'Y-m-d H:i:s');
 
-// Direction in which data is being sent
+// Direction in which data is being sent.
 define('ZOHOCRM_SYNC_DRUPAL_TO_ZOHO', '1');
 define('ZOHOCRM_SYNC_ZOHO_TO_DRUPAL', '2');
 
@@ -94,7 +96,7 @@ function zohocrm_menu() {
     'type' => MENU_CALLBACK,
     'title' => 'Edit Mapping Fields',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('zohocrm_mapping_fields_form', 4),  /* Study */
+    'page arguments' => array('zohocrm_mapping_fields_form', 4),
     'access arguments' => array('administer zohocrm'),
     'file' => 'zohocrm.admin.inc',
   );
@@ -145,19 +147,23 @@ function zohocrm_theme() {
   );
 }
 
+/**
+ * Loads mapping from the database.
+ *
+ * @param string $name
+ *   Mapping name.
+ *
+ * @return array
+ *   Loaded mapping definition without fields.
+ */
 function zohocrm_mapping_load($name) {
-  /* -- nk 
-  return db_fetch_array(db_query("SELECT * FROM {zohocrm_mapping} WHERE mapping_name = '%s'", $name));
-  return  $result;
-   */
-
   $result = db_select('zohocrm_mapping', 'm')
     ->fields('m')
-    ->condition('mapping_name',$name,'=')
+    ->condition('mapping_name', $name, '=')
     ->execute()
     ->fetchAssoc();
 
-  foreach ($result as $k => $v)  {
+  foreach ($result as $k => $v) {
     $mappings[$k] = $v;
   }
 
@@ -171,7 +177,7 @@ function zohocrm_mapping_load($name) {
  *   Name of the mapping.
  *
  * @return array
- *   Mapping definition.
+ *   Loaded mapping definition including fields.
  */
 function zohocrm_mapping_fields_load($name) {
   $mapping = zohocrm_mapping_load($name);
@@ -191,7 +197,12 @@ function zohocrm_mapping_fields_load($name) {
  * Implements hook_permission().
  */
 function zohocrm_permission() {
-  return array('administer zohocrm' => array('title' => t('administer zohocrm'), 'description' => t('Drupal/Zohocrm integration module') ), );
+  return array(
+    'administer zohocrm' => array(
+      'title' => t('administer zohocrm'),
+      'description' => t('Drupal/Zohocrm integration module'),
+    ),
+  );
 }
 
 /**
@@ -208,8 +219,8 @@ function zohocrm_invoke_all() {
   $hook = $args[0];
   unset($args[0]);
   $return = array();
+
   foreach (module_implements($hook) as $module) {
-    // zohocrm_log ($module, "zohocrm_invoke_all");
     $function = $module . '_' . $hook;
     $result = call_user_func_array($function, $args);
     if (isset($result) && is_array($result)) {
@@ -224,12 +235,15 @@ function zohocrm_invoke_all() {
 /**
  * Invokes a hook_zohocrm_endpoint_info() in all modules.
  *
- * @return
- *   The returned value of the invoked hooks.
+ * @param string $endpoint
+ *   Drupal endpoint name.
+ *
+ * @return array
+ *   Endpoint info array if endpoint name is provided, otherwise array of all
+ *   defined endpoints.
  */
 function zohocrm_endpoint_info($endpoint = NULL) {
   $return = zohocrm_invoke_all('zohocrm_endpoint_info');
-  // zohocrm_log ($return, "zohocrm_endpoint_info");
 
   if (!empty($endpoint)) {
     $return = $return[$endpoint];
@@ -244,8 +258,11 @@ function zohocrm_endpoint_info($endpoint = NULL) {
 /**
  * Invokes a hook_zohocrm_endpoint_fields_info() in all modules.
  *
- * @return
- *   The returned value of the invoked hooks.
+ * @param string $endpoint
+ *   Drupal endpoint name.
+ *
+ * @return array
+ *   Array of fields that are defined for the given endpoint.
  */
 function zohocrm_endpoint_fields_info($endpoint) {
   $return = zohocrm_invoke_all('zohocrm_endpoint_fields_info', $endpoint);
@@ -256,22 +273,19 @@ function zohocrm_endpoint_fields_info($endpoint) {
 }
 
 /**
- * Builds SelectQuery objects that can return drupal records for the given
- * drupal endpoint.
+ * Builds SelectQuery objects and adds them to the endpoint array.
  *
- * SelectQuery objects are added to the endpoint under 'query_object' array
- * element:
- *       - all: queries all Drupal records that can be managed by this endpoint
- *              regardless whether mapping to Zoho CRM already exists or not
- *    - mapped: queries only Drupal records already mapped to Zoho CRM record
+ * SelectQuery objects can be used to fetch Drupal objects managed by the given
+ * Drupal endpoint.
+ *
+ * - all: queries all Drupal records that can be managed by this endpoint
+ *        regardless whether mapping to Zoho CRM already exists or not
+ * - mapped: queries only Drupal records already mapped to Zoho CRM record
  * - notmapped: queries only Drupal records that are not yet mapped to Zoho CRM
- *              record
+ *              record.
  *
  * @param array $endpoint
  *   Drupal endpoint.
- *
- * @return array
- *   Drupal endpoint with SelectQuery objects added to it.
  */
 function zohocrm_query_build(&$endpoint) {
   $key = $endpoint['key'];
@@ -305,6 +319,15 @@ function zohocrm_query_build(&$endpoint) {
   $endpoint['query_object']['notmapped'] = $query_notmapped;
 }
 
+
+/**
+ * Instantiates and returns ZohoCRM/Client object.
+ *
+ * ZohoCRM Client is used for communication with Zoho CRM via Zoho CRM API.
+ *
+ * @return \ZohoCRM\Client
+ *   Zoho CRM client object or FALSE on error.
+ */
 function zohocrm_get_client() {
   $disabled = variable_get('zohocrm_client_disabled', 0);
   if ($disabled) {
@@ -326,8 +349,9 @@ function zohocrm_get_client() {
   return new ZohoCRM\Client($authtoken);
 }
 
-
-
+/**
+ * Returns list of Zoho CRM Modules that are supported by Zoho CRM API.
+ */
 function zohocrm_get_zoho_modules() {
   return array(
     'Leads',
@@ -353,45 +377,25 @@ function zohocrm_get_zoho_modules() {
 /**
  * Returns array of defined mappings.
  *
- * @param $active
- *   If TRUE return only active mappings, otherwise return all defined mappings
+ * @param bool $active
+ *   If TRUE return only active mappings, otherwise return all defined mappings.
  *
- * @return
+ * @return array
  *   Array of mappings
  */
 function zohocrm_get_mappings($active = TRUE) {
-  $mappings = array();
-/*
-  $where = $active ? ' WHERE status = 1' : '';
-  $sql = "SELECT * FROM {zohocrm_mapping}" . $where;
- */
+  $query = db_select('zohocrm_mapping', 'm', array('fetch' => PDO::FETCH_ASSOC))
+    ->fields('m');
 
-  // BUG: Status = 1 condition should be applied *only if $active == TRUE.
-
-  // HACK
-  if ($active == TRUE)  {
-    $result = db_select('zohocrm_mapping', 'm', array('fetch' => PDO::FETCH_ASSOC))
-      ->fields('m')
-      ->condition('status', 1, '=');
-    $rows = $result->execute()->fetchAll();
-  } else  {
-    $result = db_select('zohocrm_mapping', 'm', array('fetch' => PDO::FETCH_ASSOC))
-      ->fields('m');
-    $rows = $result->execute()->fetchAll();
+  if ($active) {
+    $query->condition('status', 1);
   }
 
-  $mappings = array();
-  foreach ($rows as $id => $row )  {
-    $mappings[$row['mapping_name']] = $row;
-  }
-
-  zohocrm_log($mappings, "zohocrm_get_mappings:");
-  return $mappings;
+  return $query->execute()->fetchAllAssoc('mapping_name');
 }
 
 /**
- * Returns array of mappings to be used
- * as options in select list form element.
+ * Returns array of mappings to be used as options in select list form element.
  */
 function zohocrm_mappings_select_options() {
   $mappings = zohocrm_get_mappings();
@@ -633,21 +637,20 @@ function zohocrm_save_zoho_data($zoho_data, $settings) {
 }
 
 /**
- * Converts source endpoint data into the format compatible with the destination endpoint.
+ * Converts source endpoint data into destination endpoint compatible format.
  *
- * @param $mapping
- *   Mapping used for conversion
- * @param $data
- *   Object or array containing data to be converted
- * @param $sync_direction
+ * @param array $mapping
+ *   Mapping used for conversion.
+ * @param mixed $data
+ *   Object or array containing data to be converted.
+ * @param int $sync_direction
  *   Direction in which data is being sent.
- * @param $object
+ * @param object $object
  *   Drupal object into which Zoho data should be saved.
  *   Applicable only to Zoho to Drupal sync.
  *
- * @return
- *   array containing data in the format compatible with destination endpoint.
- *
+ * @return array
+ *   Data in the format compatible with destination endpoint.
  */
 function zohocrm_prepare_data($mapping, $data, $sync_direction, &$object = NULL) {
   if (empty($mapping['fields'])) {
@@ -660,7 +663,7 @@ function zohocrm_prepare_data($mapping, $data, $sync_direction, &$object = NULL)
   module_load_include('inc', 'zohocrm', 'zohocrm.handlers');
 
   if ($sync_direction == ZOHOCRM_SYNC_ZOHO_TO_DRUPAL) {
-    $drupal_field ='dst';
+    $drupal_field = 'dst';
     $data = (object) $data;
   }
   else {
@@ -681,12 +684,19 @@ function zohocrm_prepare_data($mapping, $data, $sync_direction, &$object = NULL)
     }
     else {
       $handler = $fields_info[$field[$drupal_field]]['handler'];
-      //$field_name = !empty($fields_info[$field['drupal_field']]['fields']) ? $fields_info[$field['drupal_field']]['fields'] : $field['drupal_field'];
-      $args = array($field['src'], $field['dst'], $data, $sync_direction, &$object);
+      $args = array(
+        $field['src'],
+        $field['dst'],
+        $data, $sync_direction,
+        &$object,
+      );
       $value = zohocrm_execute_field_handler($handler, $args);
 
-      // Use default value if field value is empty (0 is not treated as empty value here)
-      $value = (!is_numeric($value) && empty($value)) ? $field['default_value'] : $value;
+      // Use default value if field value is empty
+      // (0 is not treated as empty value here).
+      $value = (!is_numeric($value) && empty($value))
+        ? $field['default_value']
+        : $value;
     }
 
     $record[$field['dst']] = $value;
@@ -695,6 +705,22 @@ function zohocrm_prepare_data($mapping, $data, $sync_direction, &$object = NULL)
   return $record;
 }
 
+/**
+ * Executes field handler.
+ *
+ * Field handlers are used during sending or receiving data to convert source
+ * value into the format compatible with the destination. For example Unix
+ * timestamp from the Drupal database should be converted to the DateTime format
+ * expected by Zoho CRM before sending Drupal data to Zoho.
+ *
+ * @param string $handler
+ *   Handler name.
+ * @param array $args
+ *   Arguments to be passed to the handler.
+ *
+ * @see: zohocrm_prepare_data()
+ * @see: zohocrm_field_handler_timestamp()
+ */
 function zohocrm_execute_field_handler($handler, $args) {
   $value = NULL;
 
@@ -709,7 +735,7 @@ function zohocrm_execute_field_handler($handler, $args) {
  * Implements hook_zohocrm_incoming_record_alter().
  */
 function zohocrm_zohocrm_incoming_record_alter(&$data, $mapping) {
-  // Add "Zoho CRM Record URL" field
+  // Add "Zoho CRM Record URL" field.
   if (!empty($data['Id'])) {
     $id = $data['Id'];
   }
@@ -747,9 +773,9 @@ function zohocrm_zohocrm_incoming_record_alter(&$data, $mapping) {
 /**
  * Deletes Zoho CRM record.
  *
- * @param $id
+ * @param string $id
  *   Record ID of the record to be deleted.
- * @param $module
+ * @param string $module
  *   Zoho module the record belongs to.
  */
 function zohocrm_delete_zoho_record($id, $module) {
@@ -776,16 +802,16 @@ function zohocrm_delete_zoho_record($id, $module) {
 }
 
 /**
- * Returns array of all the fields available in given Zoho CRM module
+ * Returns array of all the fields available in given Zoho CRM module.
  *
- * @param $module
- *   Name of the Zoho CRM module
- * @param $remove_sections
+ * @param string $module
+ *   Name of the Zoho CRM module.
+ * @param bool $remove_sections
  *   If TRUE remove 'sections' from the array and return one-dimensional
- *   array of fields
- *   If FALSE return fields grouped by sections
+ *   array of fields.
+ *   If FALSE return fields grouped by sections.
  *
- * @return
+ * @return array
  *    array of Zoho fields
  */
 function zohocrm_get_zoho_fields_info($module, $remove_sections = FALSE) {
@@ -809,7 +835,7 @@ function zohocrm_get_zoho_fields_info($module, $remove_sections = FALSE) {
     }
     $records = $response->getRecords();
 
-    cache_set('zohocrm:fields_info:' . $module, $records, 'cache', /* time() */ REQUEST_TIME + 60*60*24); // -- nk. time with REQUEST_TIME
+    cache_set('zohocrm:fields_info:' . $module, $records, 'cache', REQUEST_TIME + 60 * 60 * 24);
   }
 
   if ($remove_sections === TRUE) {
@@ -846,16 +872,15 @@ function zohocrm_get_zoho_fields_info($module, $remove_sections = FALSE) {
 /**
  * Returns array of most important fields in related Zoho CRM modules.
  *
- * @param $module
- *   Name of the Zoho CRM module
+ * @param string $module
+ *   Name of the Zoho CRM module.
  *
- * @return
- *    array of Zoho fields in the format
+ * @return array
+ *    Zoho fields in the format:
  *    'Related Module Name' => array(
  *      'section' => 'Section Label',
  *      'fields'  => 'array of field names',
  *    )
- *
  */
 function zohocrm_get_zoho_fields_related($module) {
   $fields = array();
@@ -889,14 +914,17 @@ function zohocrm_get_zoho_fields_related($module) {
     case 'Contacts':
       $fields = $accounts;
       break;
+
     case 'Potentials':
       $fields = $accounts + $contacts;
       break;
+
     case 'Tasks':
     case 'Events':
     case 'Calls':
       $fields = $accounts + $contacts + $potentials + $leads;
       break;
+
     case 'Cases':
     case 'Quotes':
       $fields = $accounts + $contacts + $potentials;
@@ -906,11 +934,14 @@ function zohocrm_get_zoho_fields_related($module) {
   return $fields;
 }
 
+/**
+ * Retruns a list of registered Zoho CRM users.
+ */
 function zohocrm_get_users() {
   $last_update = variable_get('zohocrm_users_last_update', 0);
-  $now = REQUEST_TIME /* time() */; // -- nk REVISIT. Not tested
+  $now = REQUEST_TIME;
 
-  if (($last_update + 60*60*24 > $now) && ($cache = cache_get('zohocrm:users'))) {
+  if (($last_update + 60 * 60 * 24 > $now) && ($cache = cache_get('zohocrm:users'))) {
     return $cache->data;
   }
 
@@ -946,8 +977,10 @@ function zohocrm_get_users() {
 }
 
 /**
- * Returns prefix used for constructing record id
- * field name for the given Zoho CRM module.
+ * Return prefix for record id field name.
+ *
+ * Returns prefix used to construct record id field name for the given
+ * Zoho CRM module.
  *
  * Examples:
  *
@@ -956,10 +989,10 @@ function zohocrm_get_users() {
  * Sales Orders      SalesOrder    SalesOrder Id
  * CustomModule2     CustomModule2 CustomModule2 Id
  *
- * @param $module
- *   Name of the Zoho CRM module
+ * @param string $module
+ *   Name of the Zoho CRM module.
  *
- * @return
+ * @return string
  *   Prefix
  */
 function zohocrm_zoho_module_prefix($module) {
@@ -978,20 +1011,14 @@ function zohocrm_zoho_module_prefix($module) {
  */
 function zohocrm_mapping_delete($mapping_name) {
 
-  db_delete ('zohocrm_mapping')
-    ->condition ('mapping_name',$mapping_name) 
-    -> execute();
-
-  db_delete ('zohocrm_mapping_fields')
-    ->condition ('mapping_name',$mapping_name) 
+  db_delete('zohocrm_mapping')
+    ->condition('mapping_name', $mapping_name)
     ->execute();
 
-  /* TODO:
-  db_query("DELETE FROM {zohocrm_mapping} WHERE mapping_name = '%s'", 
-      array ('mapping_name' => $mapping_name) );
-  db_query("DELETE FROM {zohocrm_mapping_fields} WHERE mapping_name = '%s'", 
-      array ('mapping_name' => $mapping_name) );
- */
+  db_delete('zohocrm_mapping_fields')
+    ->condition('mapping_name', $mapping_name)
+    ->execute();
+
   drupal_set_message(t('Mapping @mapping has been deleted', array('@mapping' => $mapping_name)));
 }
 
@@ -999,11 +1026,10 @@ function zohocrm_mapping_delete($mapping_name) {
  * Disables mapping.
  */
 function zohocrm_mapping_disable($mapping_name) {
-  // db_query("UPDATE {zohocrm_mapping} SET status = 0 WHERE mapping_name ='%s'", $mapping_name);
   db_update('zohocrm_mapping')
     ->fields(array('status' => '0'))
     ->condition('mapping_name', $mapping_name, '=')
-    ->execute(); 
+    ->execute();
 
   drupal_set_message(t('Mapping @mapping has been disabled', array('@mapping' => $mapping_name)));
 }
@@ -1012,12 +1038,10 @@ function zohocrm_mapping_disable($mapping_name) {
  * Enables mapping.
  */
 function zohocrm_mapping_enable($mapping_name) {
-  // db_query("UPDATE {zohocrm_mapping} SET status = 1 WHERE mapping_name ='%s'", $mapping_name);
   db_update('zohocrm_mapping')
     ->fields(array('status' => '1'))
     ->condition('mapping_name', $mapping_name, '=')
-    ->execute(); 
-
+    ->execute();
 
   drupal_set_message(t('Mapping @mapping has been enabled', array('@mapping' => $mapping_name)));
 }
@@ -1046,9 +1070,12 @@ function zohocrm_mapping_field_save($mapping_name, $record) {
   }
 }
 
+
+/**
+ *
+ */
 function zohocrm_find_matching_drupal_object($zoho_data, $mapping, $endpoint) {
   // @todo: add an UI option to the mapping to toggle on/off this functionality
-
   if (empty($endpoint['find_callback']) || !function_exists($endpoint['find_callback'])) {
     return NULL;
   }
@@ -1073,17 +1100,17 @@ function zohocrm_record_mapping_get_drupal_id($drupal_endpoint, $zoho_module, $z
 /**
  * Returns URL of a Zoho CRM record for given record mapping.
  *
- * @param
+ * @param string $drupal_endpoint
  *   Name of Drupal endpoint. For node based endpoints content
  *   type name is also accepted.
- * @param $zoho_module
- *   Name of the Zoho CRM Module
- * @param $drupal_id
- *  Id of the drupal object (e.g. nid, uid, order_id)
- *
+ * @param string $zoho_module
+ *   Name of the Zoho CRM Module.
+ * @param int $drupal_id
+ *   Id of the drupal object (e.g. nid, uid, order_id).
  */
 function zohocrm_record_mapping_get_zoho_url($drupal_endpoint, $zoho_module, $drupal_id) {
-  // Special treatment if content type name was passed instead of drupal endpoint.
+  // Special treatment if content type name was passed
+  // instead of drupal endpoint.
   $endpoints = zohocrm_endpoint_info();
   if (!isset($endpoints[$drupal_endpoint]) && isset($endpoints['node__' . $drupal_endpoint])) {
     $drupal_endpoint = 'node__' . $drupal_endpoint;
@@ -1095,14 +1122,14 @@ function zohocrm_record_mapping_get_zoho_url($drupal_endpoint, $zoho_module, $dr
 }
 
 /**
- * Saves new mapping between Zoho and Drupal record IDs
+ * Saves new mapping between Zoho and Drupal record IDs.
  *
- * @param $drupal_id
- *   Drupal record ID (e.g. uid, nid, order_id)
-  * @param $zoho_id
- *   Unique Id of the Zoho record
- * @param $mapping
- *   Definition of the mapping used for data synchronization
+ * @param int $drupal_id
+ *   Drupal record ID (e.g. uid, nid, order_id).
+ * @param string $zoho_id
+ *   Unique Id of the Zoho record.
+ * @param array $mapping
+ *   Definition of the mapping used for data synchronization.
  */
 function zohocrm_record_mapping_add($drupal_id, $zoho_id, $mapping) {
   if (empty($zoho_id)) {
@@ -1173,8 +1200,7 @@ function zohocrm_drupal_id_from_object($object, $mapping) {
 }
 
 /**
- * Controls whether current session is being used for
- * receiving Zoho data.
+ * Controls whether current session is being used for receiving Zoho data.
  */
 function zohocrm_is_receiving_zoho_data($status = NULL) {
   static $receiving = FALSE;
@@ -1187,6 +1213,8 @@ function zohocrm_is_receiving_zoho_data($status = NULL) {
 }
 
 /**
+ * Return Boolean specifing whether sync-back required.
+ *
  * Complex sync workflows may require that data received
  * from Zoho CRM is sent back to Zoho after it has been saved
  * to Drupal. This function can be used by third party code
@@ -1206,8 +1234,9 @@ function zohocrm_syncback_required($status = NULL) {
 /**
  * Constructs URL of the Zoho CRM record.
  *
- * @param $id
- *   Id of Zoho CRM record
+ * @param string $id
+ *   Id of Zoho CRM record.
+ *
  * @module
  *   name of the Zoho CRM module
  */
@@ -1227,14 +1256,17 @@ function _zohocrm_build_zoho_record_url($id, $module) {
 }
 
 /**
- * Returns TRUE if Drupal is configured to delete Zoho
- * record when corresponding drupal object is deleted.
+ * Return Boolean specifying action when Drupal record deleted.
  *
- * @param $object
- *   Drupal object being deleted (e.g. node, user)
- * @param $type
- *   string specifying type of the object being deleted
- *   valid values: node, user
+ * Returns TRUE if Drupal is configured to delete Zoho record when
+ * corresponding drupal object is deleted.
+ *
+ * @param object $object
+ *
+ *   Drupal object being deleted (e.g. node, user).
+ * @param string $type
+ *   String specifying type of the object being deleted
+ *   valid values: node, user.
  */
 function zohocrm_dtz_delete_sync_status($object, $type) {
   $sync_enabled = FALSE;
@@ -1279,12 +1311,14 @@ function zohocrm_dtz_delete_sync_status($object, $type) {
 }
 
 /**
- * Sets "Created By" and "Modified By" Zoho fields to the
- * acting (currently logged in) Drupal User when applicable.
+ * Sets user-related zoho fields.
  *
- * @param $record
- *   record being sent to Zoho
- * @param $zoho_id
+ * Sets "Created By" and "Modified By" Zoho fields to the acting
+ * (currently logged in) Drupal User when applicable.
+ *
+ * @param array $record
+ *   record being sent to Zoho.
+ * @param int $zoho_id
  *   Zoho record ID. Used to determine whether this is insert or update.
  */
 function zohocrm_set_authoring_info(&$record, $zoho_id) {
@@ -1313,7 +1347,7 @@ function zohocrm_log($data, $label = '') {
   $debug_mode = variable_get('zohocrm_debug_mode', FALSE);
   if (!$debug_mode || !module_exists('devel')) {
     $vardump_mode = variable_get('zohocrm_debug_mode_var_dump_only', FALSE);
-    if ($vardump_mode)  {
+    if ($vardump_mode) {
       print "<h2> $label </h2>";
       print '<pre>'; var_dump($data); print '</pre>';
     }
