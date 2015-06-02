@@ -3,7 +3,6 @@
 /**
  * @file
  */
-
 function zohocrm_import_form($form, &$form_state) {
 
   if (isset($form_state['storage']['file'])) {
@@ -11,11 +10,7 @@ function zohocrm_import_form($form, &$form_state) {
     return zohocrm_import_form_review_page($form_state);
   }
 
-/* -- nk. Form is a param; only in D7?
-  $form = array(
-    '#attributes' => array('enctype' => "multipart/form-data"),
-  );
- */
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
 
   $form['csv_upload'] = array(
     '#type' => 'file',
@@ -39,12 +34,12 @@ function zohocrm_import_form($form, &$form_state) {
   return $form;
 }
 
+
 /**
  * Second form page.
  */
 function zohocrm_import_form_review_page(&$form_state) {
   $form = array();
-
   $form['description'] = array(
     '#type' => 'markup',
     '#value' => t('@count records will be imported from uploaded CSV file.
@@ -56,11 +51,11 @@ function zohocrm_import_form_review_page(&$form_state) {
 
   $items = array();
   foreach ($form_state['storage']['preview_data'] as $label => $value) {
-    $items[] = '<strong>'. $label .':</strong> '. $value;
+    $items[] = '<strong>' . $label . ':</strong> ' . $value;
   }
+
   $form['preview'] = array(
-    '#type' => 'markup',
-    '#value' => theme('item_list', array('rows' => $items)),
+    '#markup' => theme('item_list', array('items' => $items)),
   );
 
   $form['cancel'] = array(
@@ -76,6 +71,7 @@ function zohocrm_import_form_review_page(&$form_state) {
 
   return $form;
 }
+
 
 function zohocrm_import_form_validate($form, &$form_state) {
   if (isset($form_state['storage']['file'])) {
@@ -117,10 +113,10 @@ function zohocrm_import_form_submit($form, &$form_state) {
   // First page got submitted.
   $file = $form_state['storage']['file'];
 
-  file_set_status($file, FILE_STATUS_PERMANENT);
+  $file->status = FILE_STATUS_PERMANENT;
 
   // Read the uploaded file and prepare data for import.
-  $f = fopen($file->filepath, "r");
+  $f = fopen($file->destination, "r");
   if ($f === FALSE) {
     drupal_set_message(t('Uploaded file could not be opened. Import failed.'), 'error');
     return;
@@ -151,11 +147,16 @@ function zohocrm_import_form_submit($form, &$form_state) {
   $batch = array(
     'title' => t('Importing Zoho CRM CSV dump'),
     'progress_message' => '',
-    'operations' => array(array('zohocrm_import_batch_operation', array($file, $data, $settings))),
-    'finished' => 'zohocrm_import_batch_finished'
+    'operations' => array(
+      array('zohocrm_import_batch_operation',
+        array($file, $data, $settings),
+      ),
+    ),
+    'finished' => 'zohocrm_import_batch_finished',
   );
 
   $form_state['storage']['count'] = $count;
   $form_state['storage']['preview_data'] = $record;
   $form_state['storage']['batch'] = $batch;
+  $form_state['rebuild'] = TRUE;
 }
