@@ -602,14 +602,14 @@ function zohocrm_save_zoho_data($zoho_data, $settings) {
   }
   else {
     // Create new object.
-    $object = $endpoint['create_callback']($endpoint);
+    $object = isset($endpoint['create_callback'])  ? $endpoint['create_callback']($endpoint) : "";
     $add_record_mapping = TRUE;
   }
 
   $record = zohocrm_prepare_data($mapping, $zoho_data, ZOHOCRM_SYNC_ZOHO_TO_DRUPAL, $object);
   zohocrm_log($record, 'DRUPAL RECORD');
 
-  $drupal_id = $endpoint['save_callback']($object, $record);
+  $drupal_id = isset($endpoint['save_callback'])  ?  $endpoint['save_callback']($object, $record)  : "";
 
   if ($add_record_mapping && !empty($drupal_id)) {
     zohocrm_record_mapping_add($drupal_id, $zoho_data['Id'], $mapping);
