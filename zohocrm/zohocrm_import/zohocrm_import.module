@@ -5,8 +5,8 @@
  */
 
  /**
- * Implements hook_menu().
- */
+  * Implements hook_menu().
+  */
 function zohocrm_import_menu() {
   $items = array();
 
@@ -31,12 +31,12 @@ function zohocrm_import_permission() {
 }
 
 /**
- * @param $file
- *   Drupal's file object
- * @param $data
- *   array containing information about the file
- * @param $settings
- *   settings used for saving zoho data to drupal
+ * @param object $file
+ *   Drupal's file object.
+ * @param array $data
+ *   Array containing information about the file.
+ * @param array $settings
+ *   Settings used for saving zoho data to drupal.
  */
 function zohocrm_import_batch_operation($file, $data, $settings, &$context) {
   if (!isset($context['sandbox']['progress'])) {
@@ -49,11 +49,11 @@ function zohocrm_import_batch_operation($file, $data, $settings, &$context) {
   // Number of records to import in single request.
   $limit = variable_get('zohocrm_import_limit', 50);
 
-  $f = fopen($file->filepath, "r");
+  $f = fopen($file->destination, "r");
   // Continue import where we left off last time.
   fseek($f, $context['sandbox']['offset']);
 
-  $i = 0;
+  $i = 0;  $row = array();
   while ($i < $limit && ($row = fgetcsv($f)) !== FALSE) {
     $record = zohocrm_import_prepare_record($row, $data['header'], $settings['mapping']);
     zohocrm_save_zoho_data($record, $settings);
@@ -84,19 +84,18 @@ function zohocrm_import_batch_finished($success, $results, $operations) {
   }
 
   // Delete the CSV file.
-  db_query('DELETE FROM {files} WHERE fid = %d', $results['file']->fid);
-  file_delete($results['file']->filepath);
+  file_delete($results['file']);
 }
 
 /**
- * @param $row
- *   single row from CSV file
- * @param $header
- *   CSV file header
- * @param $mapping
- *   name of the mapping used for import
+ * @param array $row
+ *   single row from CSV file.
+ * @param array $header
+ *   CSV file header.
+ * @param array $mapping.
+ *   Name of the mapping used for import.
  *
- * @return
+ * @return array
  *   Zoho CRM data array ready for saving into Drupal
  */
 function zohocrm_import_prepare_record($row, $header, $mapping) {
@@ -106,7 +105,7 @@ function zohocrm_import_prepare_record($row, $header, $mapping) {
 
   $record = array();
   foreach ($row as $key => $value) {
-    // remove 'zcrm_' prefix from all record IDs.
+    // Remove 'zcrm_' prefix from all record IDs.
     if (substr($header[$key], -2) === 'Id' && substr($value, 0, 5) === 'zcrm_') {
       $value = str_replace('zcrm_', '', $value);
     }
@@ -117,7 +116,7 @@ function zohocrm_import_prepare_record($row, $header, $mapping) {
   // Generate "<Module> Owner" field from "<Module> Owner Id"
   // This is required because in some cases CSV files exported from Zoho CRM
   // contain only "<Module> Owner Id" field.
-  $owner_id = $owner .' Id';
+  $owner_id = $owner . ' Id';
   if (isset($record[$owner_id]) && !isset($record[$owner])) {
     $record[$owner] = $users['by_id'][$record[$owner_id]]['email'];
   }
