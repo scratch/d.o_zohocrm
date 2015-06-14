@@ -92,16 +92,3 @@ Enable debug mode:
 
 Disable debug mode:
     drush vset zohocrm_debug_mode 0
-
-
-
-As far as porting to D7 is concerned, I'm expecting that most parts
-of the module code will be quite straightforward to port expect one
-essential part - that is CCK fields support. In D7 fields are moved
-to core and whatever code I have in D6 to provide support for CCK
-fields won't really be portable to D7. Did you look into that so
-far? Any thoughts?
-
-Do you keep your D7 port in a sandbox on d.o? I would like to have
-a look at some point.
-
