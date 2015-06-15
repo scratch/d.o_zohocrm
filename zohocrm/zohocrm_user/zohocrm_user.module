@@ -118,25 +118,11 @@ function zohocrm_user_delete($uid) {
 }
 
 function zohocrm_user_find($zoho_data, $mapping) {
-  zohocrm_log ($zoho_data, "zohocrm_user_find");
-  zohocrm_log ($mapping, "zohocrm_user_find");
-
   $uid = NULL;
   $field = $mapping['fields']['mail']['src'];
 
   if (!empty($field) && isset($zoho_data[$field])) {
-    //$uid = db_result(db_query("SELECT uid FROM {users} WHERE mail = '%s'", $zoho_data[$field]));
-    if (function_exists('user_load_by_mail')) {
-      $uid = user_load_by_mail($field);
-
-      // TODO: Pull user info into array from object before returning.
-    }
-    else  {
-      $result = db_select ('users')
-	->fields('u')
-	->condition('u.mail', $zoho_data[$field])
-	->execute();
-    }
+    $result = db_query("SELECT uid FROM {users} u WHERE u.mail = :mail", array(':mail' => $zoho_data[$field]));
 
     if (!empty($result))
       foreach ($result as $k => $v)  {
