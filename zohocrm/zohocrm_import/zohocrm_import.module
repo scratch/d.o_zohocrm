@@ -117,7 +117,7 @@ function zohocrm_import_prepare_record($row, $header, $mapping) {
   // This is required because in some cases CSV files exported from Zoho CRM
   // contain only "<Module> Owner Id" field.
   $owner_id = $owner . ' Id';
-  if (isset($record[$owner_id]) && !isset($record[$owner])) {
+  if (isset($record[$owner_id]) && !isset($record[$owner]) && isset($users['by_id'][$record[$owner_id]])) {
     $record[$owner] = $users['by_id'][$record[$owner_id]]['email'];
   }
 
