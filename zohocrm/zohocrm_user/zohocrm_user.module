@@ -118,12 +118,7 @@ function zohocrm_user_find($zoho_data, $mapping) {
   $field = $mapping['fields']['mail']['src'];
 
   if (!empty($field) && isset($zoho_data[$field])) {
-    $result = db_query("SELECT uid FROM {users} u WHERE u.mail = :mail", array(':mail' => $zoho_data[$field]));
-
-    if (!empty($result))
-      foreach ($result as $k => $v)  {
-	$uid[$k] = $v;
-      }
+    $uid = db_query("SELECT uid FROM {users} WHERE mail = ?", array($zoho_data[$field]))->fetchField();
   }
 
   return $uid;
