@@ -24,7 +24,7 @@ function zohocrm_user_zohocrm_endpoint_info() {
       'create_callback' => 'zohocrm_user_create',
       'load_callback' => 'user_load',
       'save_callback' => 'zohocrm_user_save',
-      'delete_callback' => 'zohocrm_user_delete',
+      'delete_callback' => 'user_delete',
       'find_callback' => 'zohocrm_user_find',
     ),
   );
@@ -111,10 +111,6 @@ function zohocrm_user_save(&$account, $record) {
   $account = user_save($account, $record);
 
   return $account->uid;
-}
-
-function zohocrm_user_delete($uid) {
-  user_delete(array(), $uid);  /* -- nk. TODO. Replace with user_cancel */
 }
 
 function zohocrm_user_find($zoho_data, $mapping) {
