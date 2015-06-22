@@ -796,7 +796,6 @@ function zohocrm_delete_zoho_record($id, $module) {
     zohocrm_log($response->getResponse(), 'ZOHO CRM RESPONSE');
   }
   catch (Exception $e) {
-    drupal_set_message(t('Deleting Zoho CRM record failed', 'error'));
     watchdog('zohocrm', "Deleting Zoho CRM record failed. Id: @id. Error message: @message", array('@id' => $id, '@message' => $e->getMessage()), WATCHDOG_ERROR);
   }
 }
