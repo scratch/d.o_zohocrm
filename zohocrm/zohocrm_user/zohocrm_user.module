@@ -125,26 +125,15 @@ function zohocrm_user_find($zoho_data, $mapping) {
 }
 
 /**
- * Implements hook_user().
+ * Implements hook_user_delete().
  */
-function zohocrm_user_user($op, &$edit, &$account, $category = NULL) {
-  switch ($op) {
-    case 'delete':
-      // Check if user deletion will be synced to Zoho. If not,
-      // clean up record mapping here.
-      if (zohocrm_is_receiving_zoho_data() || !zohocrm_dtz_delete_sync_status($account, 'user')) {
-        zohocrm_record_mapping_delete(array('drupal_id' => $account->uid));
-      }
-      break;
-  }
+function zohocrm_user_user_delete($account) {
+  // Check if user deletion will be synced to Zoho. If not, clean up record
+  // mapping here. If user deletion is synced to Zoho we can't delete record
+  // mapping here because record mapping must be available for sync to succeed.
+  // @todo Uncomment below code once zohocrm_dtz_delete_sync_status() is ported
+  // to D7.
+  //if (zohocrm_is_receiving_zoho_data() || !zohocrm_dtz_delete_sync_status($account, 'user')) {
+  //  zohocrm_record_mapping_delete(array('drupal_id' => $account->uid));
+  //}
 }
-
-/** zohocrm_user_delete -- nk. REVISIT
-function zohocrm_user_delete($account) {
-    // Check if user deletion will be synced to Zoho. If not,
-    // clean up record mapping here.
-    if (zohocrm_is_receiving_zoho_data() || !zohocrm_dtz_delete_sync_status($account, 'user')) {
-      zohocrm_record_mapping_delete(array('drupal_id' => $account->uid));
-  }
-}
- */
