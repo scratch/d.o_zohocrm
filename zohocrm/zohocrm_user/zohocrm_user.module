@@ -34,6 +34,8 @@ function zohocrm_user_zohocrm_endpoint_info() {
  * Implements hook_zohocrm_endpoint_fields_info().
  */
 function zohocrm_user_zohocrm_endpoint_fields_info($endpoint) {
+  $fields = array();
+
   if ($endpoint == ZOHOCRM_ENDPOINT_USER) {
     $fields = array(
       'uid' => array(
@@ -86,8 +88,6 @@ function zohocrm_user_zohocrm_endpoint_fields_info($endpoint) {
         'sync_direction' => ZOHOCRM_SYNC_DRUPAL_TO_ZOHO,
       ),
     );
-  } else  {
-    $fields = array();   // So a null array is returned.
   }
 
   return $fields;
