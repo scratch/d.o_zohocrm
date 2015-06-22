@@ -351,7 +351,7 @@ function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
     }
   }
 
-  if (module_exists('zohocrm_webhooks')) {
+  if (module_exists('zohocrm_webhooks') || module_exists('zohocrm_import')) {
     // Zoho to Drupal.
     $form['ztd'] = array(
       '#type' => 'fieldset',
@@ -408,24 +408,26 @@ function zohocrm_mapping_fields_form($form, &$form_state, $mapping) {
       }
     }
 
-    $form['webhooks_help'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Webhook XML data parameter'),
-      '#description' => t('On Zoho CRM Webhook configuration page go to section "Parameters in the
-                          User Defined Format", create parameter named "xmldata" and paste this
-                          XML code in the value field. This code can be used as it is or customized
-                          to fit your own specific requirements.'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-    );
+    if (module_exists('zohocrm_webhooks')) {
+      $form['webhooks_help'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Webhook XML data parameter'),
+        '#description' => t('On Zoho CRM Webhook configuration page go to section "Parameters in the
+                            User Defined Format", create parameter named "xmldata" and paste this
+                            XML code in the value field. This code can be used as it is or customized
+                            to fit your own specific requirements.'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
 
-    $xmldata = zohocrm_webhooks_xmldata($mapping['zoho_module']);
-    $form['webhooks_help']['xmldata'] = array(
-      '#type' => 'markup',
-      '#value' => check_plain($xmldata),
-      '#prefix' => '<pre>',
-      '#suffix' => '</pre>',
-    );
+      $xmldata = zohocrm_webhooks_xmldata($mapping['zoho_module']);
+      $form['webhooks_help']['xmldata'] = array(
+        '#type' => 'markup',
+        '#value' => check_plain($xmldata),
+        '#prefix' => '<pre>',
+        '#suffix' => '</pre>',
+      );
+    }
   }
 
   $form['mapping_name'] = array(
